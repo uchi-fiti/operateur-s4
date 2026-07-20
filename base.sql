@@ -6,7 +6,8 @@ CREATE TABLE operateur (
 CREATE TABLE prefixe_operateur (
     id SERIAL PRIMARY KEY,
     operateur_id INTEGER NOT NULL REFERENCES operateur(id),
-    prefixe VARCHAR(5) NOT NULL UNIQUE
+    prefixe VARCHAR(5) NOT NULL UNIQUE,
+    date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE gerant_operateur (
     id SERIAL PRIMARY KEY,
