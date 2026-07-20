@@ -7,12 +7,10 @@ class HistoriqueOperationModel extends Model
 {
     protected $table = 'historique_operation';
     protected $primaryKey = 'id';
-<<<<<<< HEAD
+
 
     protected $allowedFields = ['type_operation_id', 'compte_source', 'compte_destination', 'montant', 'frais', 'date_operation', 'commission'];
-=======
-    protected $allowedFields = ['type_operation_id', 'compte_source', 'compte_destination', 'montant', 'frais', 'date_operation'];
->>>>>>> c8e90dd2d1d4dc247a1cf06f920e3ff45fadb75a
+
 
 
     /**
