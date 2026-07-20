@@ -59,9 +59,15 @@ CREATE TABLE historique_operation (
     compte_destination INTEGER REFERENCES compte_client(id),
     montant NUMERIC(15,2) NOT NULL,
     frais NUMERIC(15,2) DEFAULT 0,
+    commission NUMERIC(15,2) DEFAULT 0,
     date_operation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE commission_operateur (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    prefixe_autre_operateur VARCHAR(5) NOT NULL,
+    pct_commission NUMERIC(5,2) NOT NULL
+);
 -- ==========================
 -- OPERATEURS
 -- ==========================
@@ -179,3 +185,7 @@ INSERT INTO historique_operation (type_operation_id, compte_source, compte_desti
 (3,3,5,15000,250),
 (3,5,8,2500,50),
 (3,8,7,7000,100);
+
+insert into commission_operateur (prefixe_autre_operateur, pct_commission) values
+('033', 5.00),
+('032', 3.00);
