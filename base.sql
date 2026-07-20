@@ -1,28 +1,37 @@
+PRAGMA foreign_keys = ON;
+
+-- ==========================
+-- STRUCTURE (SQLite3)
+-- ==========================
+
 CREATE TABLE operateur (
-    id SERIAL PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     nom VARCHAR(100) NOT NULL
 );
 
 CREATE TABLE prefixe_operateur (
-    id SERIAL PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     operateur_id INTEGER NOT NULL REFERENCES operateur(id),
-    prefixe VARCHAR(5) NOT NULL UNIQUE
+    prefixe VARCHAR(5) NOT NULL UNIQUE,
+    date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE gerant_operateur (
-    id SERIAL PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     operateur_id INTEGER NOT NULL REFERENCES operateur(id),
     username VARCHAR(50) UNIQUE NOT NULL,
     pwd VARCHAR(100) NOT NULL
 );
+
 CREATE TABLE client (
-    id SERIAL PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     nom VARCHAR(100),
     prenom VARCHAR(100),
     date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE compte_client (
-    id SERIAL PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     operateur_id INTEGER NOT NULL REFERENCES operateur(id),
     client_id INTEGER NOT NULL REFERENCES client(id),
     telephone VARCHAR(20) UNIQUE NOT NULL,
@@ -31,33 +40,25 @@ CREATE TABLE compte_client (
 );
 
 CREATE TABLE type_operation (
-    id SERIAL PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     nom VARCHAR(50) UNIQUE NOT NULL
 );
 
 CREATE TABLE operation_operateur (
-    id SERIAL PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     type_operation_id INTEGER NOT NULL REFERENCES type_operation(id),
-
     montant_min NUMERIC(15,2) NOT NULL,
     montant_max NUMERIC(15,2) NOT NULL,
-
     frais NUMERIC(15,2) NOT NULL
 );
 
 CREATE TABLE historique_operation (
-    id SERIAL PRIMARY KEY,
-
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     type_operation_id INTEGER NOT NULL REFERENCES type_operation(id),
-
     compte_source INTEGER REFERENCES compte_client(id),
-
     compte_destination INTEGER REFERENCES compte_client(id),
-
     montant NUMERIC(15,2) NOT NULL,
-
     frais NUMERIC(15,2) DEFAULT 0,
-
     date_operation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -95,14 +96,14 @@ INSERT INTO gerant_operateur (operateur_id, username, pwd) VALUES
 -- ==========================
 
 INSERT INTO client (nom, prenom) VALUES
-('Jean','Rakoto'),               -- id 1
-('Marie','Rasoanaivo'),          -- id 2
-('Paul','Randria'),              -- id 3
-('Naina','Andriam'),             -- id 4
-('Sarah','Rakotondraibe'),       -- id 5
-('Lucas','Ramanantsoa'),         -- id 6
-('Tiana','Razafindrakoto'),      -- id 7 (split from single-string name)
-('Mickael','Andrianina');        -- id 8 (split from single-string name)
+('Jean','Rakoto'),
+('Marie','Rasoanaivo'),
+('Paul','Randria'),
+('Naina','Andriam'),
+('Sarah','Rakotondraibe'),
+('Lucas','Ramanantsoa'),
+('Tiana','Razafindrakoto'),
+('Mickael','Andrianina');
 
 -- ==========================
 -- COMPTES
@@ -122,27 +123,21 @@ INSERT INTO compte_client (operateur_id, client_id, telephone, code_secret, sold
 -- TYPES D'OPERATIONS
 -- ==========================
 
-INSERT INTO type_operation (nom) VALUES
-('Depot'),
-('Retrait'),
-('Transfert');
+INSERT INTO type_operation (id, nom) VALUES
+(1, 'Depot'),
+(2, 'Retrait'),
+(3, 'Transfert');
 
 -- ==========================
 -- BAREMES DES FRAIS
 -- ==========================
 
 -- Dépôt (gratuit)
-
-INSERT INTO operation_operateur
-(type_operation_id,montant_min,montant_max,frais)
-VALUES
+INSERT INTO operation_operateur (type_operation_id, montant_min, montant_max, frais) VALUES
 (1,0,999999999,0);
 
 -- Retrait
-
-INSERT INTO operation_operateur
-(type_operation_id,montant_min,montant_max,frais)
-VALUES
+INSERT INTO operation_operateur (type_operation_id, montant_min, montant_max, frais) VALUES
 (2,100,1000,50),
 (2,1001,2500,100),
 (2,2501,10000,200),
@@ -151,10 +146,7 @@ VALUES
 (2,100001,500000,2000);
 
 -- Transfert
-
-INSERT INTO operation_operateur
-(type_operation_id,montant_min,montant_max,frais)
-VALUES
+INSERT INTO operation_operateur (type_operation_id, montant_min, montant_max, frais) VALUES
 (3,100,1000,25),
 (3,1001,2500,50),
 (3,2501,10000,100),
@@ -167,29 +159,20 @@ VALUES
 -- ==========================
 
 -- Dépôts
-
-INSERT INTO historique_operation
-(type_operation_id,compte_source,compte_destination,montant,frais)
-VALUES
+INSERT INTO historique_operation (type_operation_id, compte_source, compte_destination, montant, frais) VALUES
 (1,NULL,1,50000,0),
 (1,NULL,2,25000,0),
 (1,NULL,6,100000,0);
 
 -- Retraits
-
-INSERT INTO historique_operation
-(type_operation_id,compte_source,compte_destination,montant,frais)
-VALUES
+INSERT INTO historique_operation (type_operation_id, compte_source, compte_destination, montant, frais) VALUES
 (2,1,NULL,5000,200),
 (2,3,NULL,30000,500),
 (2,5,NULL,1000,50),
 (2,6,NULL,80000,1000);
 
 -- Transferts
-
-INSERT INTO historique_operation
-(type_operation_id,compte_source,compte_destination,montant,frais)
-VALUES
+INSERT INTO historique_operation (type_operation_id, compte_source, compte_destination, montant, frais) VALUES
 (3,1,2,10000,100),
 (3,2,4,5000,100),
 (3,6,1,20000,250),

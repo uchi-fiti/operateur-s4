@@ -7,4 +7,8 @@ class OperationOperateurModel extends Model {
     protected $table='operation_operateur';
     protected $primaryKey='id';
     protected $allowedFields=['type_operation_id','montant_min','montant_max','frais'];
+
+    public function getGainsVenantDeFrais(){
+        return $this->selectSum("frais", "fraisTotaux");
+    }
 }
