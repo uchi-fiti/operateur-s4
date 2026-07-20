@@ -16,14 +16,16 @@ CREATE TABLE gerant_operateur (
 );
 CREATE TABLE client (
     id SERIAL PRIMARY KEY,
-    telephone VARCHAR(20) UNIQUE NOT NULL,
     nom VARCHAR(100),
+    prenom VARCHAR(100),
     date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE compte_client (
     id SERIAL PRIMARY KEY,
+    operateur_id INTEGER NOT NULL REFERENCES operateur(id),
     client_id INTEGER NOT NULL REFERENCES client(id),
+    telephone VARCHAR(20) UNIQUE NOT NULL,
     code_secret VARCHAR(10) UNIQUE NOT NULL,
     solde NUMERIC(15,2) DEFAULT 0
 );
@@ -92,15 +94,15 @@ INSERT INTO gerant_operateur (operateur_id, username, pwd) VALUES
 -- CLIENTS
 -- ==========================
 
-INSERT INTO client (telephone, nom) VALUES
-('0340100001','Jean Rakoto'),
-('0340100002','Marie Rasoanaivo'),
-('0331200003','Paul Randria'),
-('0324500004','Naina Andriam'),
-('0387800005','Sarah Rakotondraibe'),
-('0378900006','Lucas Ramanantsoa'),
-('0342300007','Tiana Razafindrakoto'),
-('0334500008','Mickael Andrianina');
+INSERT INTO client (operateur_id, telephone, nom) VALUES
+(1, '0340100001','Jean Rakoto'),
+(1, '0340100002','Marie Rasoanaivo'),
+(2, '0331200003','Paul Randria'),
+(3, '0324500004','Naina Andriam'),
+(1, '0387800005','Sarah Rakotondraibe'),
+(3, '0378900006','Lucas Ramanantsoa'),
+(1, '0342300007','Tiana Razafindrakoto'),
+(2, '0334500008','Mickael Andrianina');
 
 -- ==========================
 -- COMPTES
