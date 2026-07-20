@@ -63,4 +63,64 @@ class OperationOperateurController extends BaseController
         return view('operateur/operations', ["operation" => $modifiedObject]);
     }
 
+    public function edit($id)
+    {
+        if ($redirect = $this->ensureLoggedIn()) {
+            return $redirect;
+        }
+
+        $model = new OperationOperateurModel();
+        $operation = $model->find($id);
+
+        if (!$operation) {
+            return redirect()->to('/operateur/operations');
+        }
+
+        $typeOperationModel = new TypeOperationModel();
+        $typeOperations = $typeOperationModel->findAll();
+
+        return view('operateur/edit_operation', [
+            'operation' => $operation,
+            'typeOperations' => $typeOperations,
+        ]);
+    }
+    public function update($id)
+{
+    if ($redirect = $this->ensureLoggedIn()) {
+        return $redirect;
+    }
+
+    $model = new OperationOperateurModel();
+
+    $operation = $model->find($id);
+
+    if (!$operation) {
+        return redirect()->to('/operateur/operations');
+    }
+
+    $rules = [
+        'type_operation_id' => 'required|integer',
+        'montant_min'       => 'required',
+        'montant_max'       => 'required',
+        'frais'             => 'required'
+    ];
+
+    if (!$this->validate($rules)) {
+        return redirect()
+            ->back()
+            ->withInput()
+            ->with('errors', $this->validator->getErrors());
+    }
+
+    $model->update($id, [
+        'type_operation_id' => $this->request->getPost('type_operation_id'),
+        'montant_min'       => $this->request->getPost('montant_min'),
+        'montant_max'       => $this->request->getPost('montant_max'),
+        'frais'             => $this->request->getPost('frais')
+    ]);
+
+    return redirect()
+        ->to('/operateur/operations')
+        ->with('success', 'Barème modifié avec succès.');
+}
 }
