@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Models\GerantOperateurModel;
+use App\Models\HistoriqueOperationModel;
 use App\Models\PrefixeOperateurModel;
 use App\Models\OperateurModel;
 
@@ -47,7 +48,44 @@ class OperateurController extends BaseController
             return redirect()->to('/operateur/login');
         }
 
-        return view('operateur/dashboard');
+        $operateurId = (int) session()->get('operateur_id');
+        $nombreJours = 7;
+
+        $historiqueModel = new HistoriqueOperationModel();
+        $revenus         = $historiqueModel->revenusParJour($operateurId, $nombreJours);
+
+        // La requete ne renvoie que les journees ayant au moins une operation :
+        // on reconstruit ici la serie complete pour que le graphique affiche
+        // toujours 7 barres, y compris a zero.
+        $libelles = [];
+        $valeurs  = [];
+
+        for ($i = $nombreJours - 1; $i >= 0; $i--) {
+            $jour = date('Y-m-d', strtotime('-' . $i . ' days'));
+
+            $libelles[] = $this->libelleJour($jour);
+            $valeurs[]  = $revenus[$jour] ?? 0;
+        }
+
+        return view('operateur/dashboard', [
+            'libelles'    => $libelles,
+            'valeurs'     => $valeurs,
+            'nombreJours' => $nombreJours,
+            'total'       => array_sum($valeurs),
+        ]);
+    }
+
+    /**
+     * Libelle court en francais pour l'axe du graphique : « lun. 14/07 ».
+     * Construit a la main pour ne pas dependre de l'extension intl.
+     */
+    private function libelleJour(string $jour): string
+    {
+        $noms = ['Dim.', 'Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.'];
+
+        $horodatage = strtotime($jour);
+
+        return $noms[(int) date('w', $horodatage)] . ' ' . date('d/m', $horodatage);
     }
 
     public function prefixes()

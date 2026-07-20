@@ -33,7 +33,10 @@
 
     <section class="card">
       <div class="card-body">
-        <h2 class="h5 mb-4">Revenus par jour (7 derniers jours)</h2>
+        <h2 class="h5 mb-1">Revenus par jour (<?= (int) $nombreJours ?> derniers jours)</h2>
+        <p class="sous-titre mb-4">
+          Total sur la période : <?= number_format((float) $total, 0, ',', '.') ?> Ar
+        </p>
         <canvas id="graphiqueRevenus" height="110"></canvas>
       </div>
     </section>
@@ -46,10 +49,10 @@
     new Chart(contexte, {
       type: 'bar',
       data: {
-        labels: ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'],
+        labels: <?= json_encode($libelles, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
         datasets: [{
           label: 'Revenus (Ar)',
-          data: [124000, 98000, 156000, 143000, 187000, 205000, 92000],
+          data: <?= json_encode($valeurs, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
           backgroundColor: '#fca311',
           borderColor: '#14213d',
           borderWidth: 1
