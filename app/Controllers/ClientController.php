@@ -9,6 +9,7 @@ use App\Models\TypeOperationModel;
 
 use App\Models\PrefixeOperateurModel;
 use App\Models\CommissionOperateurModel;
+
 use CodeIgniter\HTTP\RedirectResponse;
 
 class ClientController extends BaseController
@@ -281,6 +282,7 @@ class ClientController extends BaseController
             return $redirection;
         }
 
+
         $destinataire = trim((string) $this->request->getPost('destinataire'));
         $montant      = $this->montantSaisi('montant');
         $code         = trim((string) $this->request->getPost('code'));
@@ -294,17 +296,8 @@ class ClientController extends BaseController
                 ->with('erreur', 'Le montant doit être un nombre strictement positif.');
         }
 
-        $beneficiaire = $this->comptes->parTelephone($destinataire);
 
-        if ($beneficiaire === null) {
-            return redirect()->back()->withInput()
-                ->with('erreur', "Ce numéro de destinataire n'existe pas.");
-        }
 
-        if ((int) $beneficiaire['id'] === $compteId) {
-            return redirect()->back()->withInput()
-                ->with('erreur', 'Vous ne pouvez pas transférer de l\'argent vers votre propre compte.');
-        }
 
         $typeId = $this->types->idParNom('Transfert');
         $frais  = $this->baremes->fraisPour($typeId, $montant);
@@ -329,7 +322,6 @@ class ClientController extends BaseController
                 ->with('erreur', 'Code secret incorrect.');
         }
 
-        
         // Vérifie si c'est un transfert externe
         if ($this->estTransfertExterne($destinataire)) {
             if (! $this->faireTransfertExterne($destinataire, $montant, $frais, $compteId, $typeId)) {
@@ -535,6 +527,7 @@ class ClientController extends BaseController
     {
         return number_format($montant, 0, ',', '.');
     }
+
 
     /**
      * Vérifie si le transfert est vers un numéro appartenant à un opérateur différent.
