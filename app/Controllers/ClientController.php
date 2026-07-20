@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Models\CommissionAutresOperateursModel;
 use App\Models\CompteClientModel;
 use App\Models\HistoriqueOperationModel;
 use App\Models\OperationOperateurModel;
@@ -18,6 +19,7 @@ class ClientController extends BaseController
     protected HistoriqueOperationModel $historiques;
     protected OperationOperateurModel $baremes;
     protected TypeOperationModel $types;
+    protected CommissionAutresOperateursModel $commissions;
 
     public function __construct()
     {
@@ -25,6 +27,7 @@ class ClientController extends BaseController
         $this->historiques = new HistoriqueOperationModel();
         $this->baremes     = new OperationOperateurModel();
         $this->types       = new TypeOperationModel();
+        $this->commissions = new CommissionAutresOperateursModel();
     }
 
     // =====================================================================
@@ -297,7 +300,24 @@ class ClientController extends BaseController
         }
 
 
+        // Deux cas : le destinataire est un de nos comptes (transfert interne),
+        // ou son prefixe appartient a un autre operateur autorise (transfert
+        // externe). Dans le second cas nous n'avons aucun compte a crediter :
+        // nous enregistrons seulement ce que nous devrons lui reverser.
+        $beneficiaire = $this->comptes->parTelephone($destinataire);
+        $autreOp      = $beneficiaire === null
+            ? $this->commissions->pourTelephone($destinataire)
+            : null;
 
+        if ($beneficiaire === null && $autreOp === null) {
+            return redirect()->back()->withInput()
+                ->with('erreur', "Ce numéro n'existe pas et son préfixe n'appartient à aucun opérateur partenaire.");
+        }
+
+        if ($beneficiaire !== null && (int) $beneficiaire['id'] === $compteId) {
+            return redirect()->back()->withInput()
+                ->with('erreur', 'Vous ne pouvez pas transférer de l\'argent vers votre propre compte.');
+        }
 
         $typeId = $this->types->idParNom('Transfert');
 
@@ -308,7 +328,13 @@ class ClientController extends BaseController
                 ->with('erreur', $this->messageHorsBareme($typeId, 'transfert'));
         }
 
-        $total = $montant + $frais;
+        // La commission est payee par le client EN PLUS des frais, puis reversee
+        // integralement a l'autre operateur : elle n'entre pas dans nos revenus.
+        $commission = $autreOp === null
+            ? 0.0
+            : $this->commissions->commissionPour((float) $autreOp['pct_commission'], $montant);
+
+        $total = $montant + $frais + $commission;
 
         if ((float) $compte['solde'] < $total) {
             return redirect()->back()->withInput()
@@ -353,14 +379,21 @@ class ClientController extends BaseController
         $db->transStart();
 
         $this->comptes->ajusterSolde($compteId, -$total);
-        $this->comptes->ajusterSolde((int) $beneficiaire['id'], $montant);
+
+        if ($beneficiaire !== null) {
+            $this->comptes->ajusterSolde((int) $beneficiaire['id'], $montant);
+        }
+
         $this->historiques->insert([
-            'type_operation_id'  => $typeId,
-            'compte_source'      => $compteId,
-            'compte_destination' => (int) $beneficiaire['id'],
-            'montant'            => $montant,
-            'frais'              => $frais,
-            'date_operation'     => date('Y-m-d H:i:s'),
+            'type_operation_id'     => $typeId,
+            'compte_source'         => $compteId,
+            // Transfert externe : aucun compte a referencer, on garde le numero.
+            'compte_destination'    => $beneficiaire !== null ? (int) $beneficiaire['id'] : null,
+            'telephone_destination' => $beneficiaire !== null ? null : $destinataire,
+            'montant'               => $montant,
+            'frais'                 => $frais,
+            'commission'            => $commission,
+            'date_operation'        => date('Y-m-d H:i:s'),
         ]);
 
         $db->transComplete();
@@ -372,7 +405,7 @@ class ClientController extends BaseController
 
         return redirect()->to('client/solde')
             ->with('succes', 'Transfert de ' . $this->formater($montant) . ' Ar vers '
-                . $beneficiaire['telephone'] . ' effectué (frais : ' . $this->formater($frais) . ' Ar).');
+                . $destinataire . ' effectué (frais : ' . $this->formater($frais + $commission) . ' Ar).');
     }
 
     public function historique()
@@ -500,26 +533,42 @@ class ClientController extends BaseController
 
         $beneficiaire = $this->comptes->parTelephone($telephone);
 
-        if ($beneficiaire === null) {
+        if ($beneficiaire !== null) {
+            if ((int) $beneficiaire['id'] === $this->compteId()) {
+                return $this->response->setJSON([
+                    'existe'  => false,
+                    'message' => 'Il s\'agit de votre propre numéro.',
+                ]);
+            }
+
+            $client = $this->comptes->avecClient((int) $beneficiaire['id']);
+
+            // On ne renvoie que le nom : ni identifiant, ni solde, ni code secret.
             return $this->response->setJSON([
-                'existe'  => false,
-                'message' => "Ce numéro n'existe pas.",
+                'existe'  => true,
+                'message' => 'Destinataire : ' . trim($client['prenom'] . ' ' . $client['nom']) . '.',
             ]);
         }
 
-        if ((int) $beneficiaire['id'] === $this->compteId()) {
+        // Numero inconnu chez nous : reste a savoir si son prefixe appartient a
+        // un operateur partenaire. On annonce alors la commission, puisque le
+        // client la paiera en plus des frais.
+        $autreOp = $this->commissions->pourTelephone($telephone);
+
+        if ($autreOp === null) {
             return $this->response->setJSON([
                 'existe'  => false,
-                'message' => 'Il s\'agit de votre propre numéro.',
+                'message' => "Ce numéro n'existe pas et son préfixe n'est pas autorisé.",
             ]);
         }
 
-        $client = $this->comptes->avecClient((int) $beneficiaire['id']);
-
-        // On ne renvoie que le nom : ni identifiant, ni solde, ni code secret.
         return $this->response->setJSON([
             'existe'  => true,
-            'message' => 'Destinataire : ' . trim($client['prenom'] . ' ' . $client['nom']) . '.',
+            'externe' => true,
+            'message' => 'Transfert vers un autre opérateur (préfixe '
+                . $autreOp['prefixe_autre_operateur'] . ') : commission de '
+                . rtrim(rtrim(number_format((float) $autreOp['pct_commission'], 2, ',', ' '), '0'), ',')
+                . ' % en plus des frais.',
         ]);
     }
 

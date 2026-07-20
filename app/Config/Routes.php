@@ -45,6 +45,15 @@ $routes->get('/operateur/dashboard', 'OperateurController::dashboard');
 $routes->get('/operateur/prefixes', 'OperateurController::prefixes');
 $routes->post('/operateur/prefixes', 'OperateurController::addPrefix');
 $routes->get('/operateur/comptes-clients', 'OperateurController::comptesClients');
+
+// Prefixes des autres operateurs et commissions associees.
+$routes->get('/operateur/prefixes-autres', 'OperateurController::prefixesAutres');
+$routes->get('/operateur/prefixes-autres/ajouter', 'OperateurController::showAjoutPrefixeAutre');
+$routes->post('/operateur/prefixes-autres/ajouter', 'OperateurController::addPrefixeAutre');
+$routes->post('/operateur/prefixes-autres/modifier/(:num)', 'OperateurController::updateCommission/$1');
+
+// Situation des montants a reverser aux autres operateurs.
+$routes->get('/operateur/montants-a-envoyer', 'OperateurController::montantsAEnvoyer');
 $routes->get('/operateur/operations', 'OperationOperateurController::new');
 $routes->post('/operateur/operations', 'OperationOperateurController::create');
 $routes->get('/operateur/operations/(:num)/edit', 'OperationOperateurController::edit/$1');

@@ -10,8 +10,10 @@
         <?php foreach ($operations as $operation): ?>
           <?php
             $montant = number_format((float) $operation['montant'], 0, ',', '.');
-            $frais   = number_format((float) $operation['frais'], 0, ',', '.');
-            $recu    = (int) $operation['compte_destination'] === $compteId;
+            // Le client a paye les frais ET la commission : on lui affiche le
+            // total preleve, la repartition entre operateurs ne le concerne pas.
+            $frais = number_format((float) $operation['frais'] + (float) $operation['commission'], 0, ',', '.');
+            $recu  = (int) $operation['compte_destination'] === $compteId;
           ?>
           <li class="list-group-item">
             <p class="historique-phrase">

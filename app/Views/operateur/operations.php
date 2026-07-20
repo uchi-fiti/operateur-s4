@@ -39,7 +39,7 @@
           <div class="col-12 col-md-5">
             <label for="typeOperation" class="form-label">Type d'opération</label>
             <select class="form-select" id="typeOperation" name="typeOperation">
-              <option value="">Tout les types</option>
+              <option value="">Tous les types</option>
               <?php foreach (($typeOperations ?? []) as $typeOperation): ?>
                 <option value="<?= $typeOperation['id'] ?>"><?= esc($typeOperation['nom']) ?></option>
               <?php endforeach; ?>
