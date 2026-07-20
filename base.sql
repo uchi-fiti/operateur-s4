@@ -95,29 +95,29 @@ INSERT INTO gerant_operateur (operateur_id, username, pwd) VALUES
 -- CLIENTS
 -- ==========================
 
-INSERT INTO client (operateur_id, telephone, nom) VALUES
-(1, '0340100001','Jean Rakoto'),
-(1, '0340100002','Marie Rasoanaivo'),
-(2, '0331200003','Paul Randria'),
-(3, '0324500004','Naina Andriam'),
-(1, '0387800005','Sarah Rakotondraibe'),
-(3, '0378900006','Lucas Ramanantsoa'),
-(1, '0342300007','Tiana Razafindrakoto'),
-(2, '0334500008','Mickael Andrianina');
+INSERT INTO client (nom, prenom) VALUES
+('Jean','Rakoto'),               -- id 1
+('Marie','Rasoanaivo'),          -- id 2
+('Paul','Randria'),              -- id 3
+('Naina','Andriam'),             -- id 4
+('Sarah','Rakotondraibe'),       -- id 5
+('Lucas','Ramanantsoa'),         -- id 6
+('Tiana','Razafindrakoto'),      -- id 7 (split from single-string name)
+('Mickael','Andrianina');        -- id 8 (split from single-string name)
 
 -- ==========================
 -- COMPTES
 -- ==========================
 
-INSERT INTO compte_client (client_id, code_secret, solde) VALUES
-(1,'1111',250000),
-(2,'2222',80000),
-(3,'3333',150000),
-(4,'4444',50000),
-(5,'5555',120000),
-(6,'6666',300000),
-(7,'7777',45000),
-(8,'8888',98000);
+INSERT INTO compte_client (operateur_id, client_id, telephone, code_secret, solde) VALUES
+(1, 1, '0340100001', '1111', 250000),
+(1, 2, '0340100002', '2222', 80000),
+(2, 3, '0331200003', '3333', 150000),
+(3, 4, '0324500004', '4444', 50000),
+(1, 5, '0387800005', '5555', 120000),
+(3, 6, '0378900006', '6666', 300000),
+(1, 7, '0342300007', '7777', 45000),
+(2, 8, '0334500008', '8888', 98000);
 
 -- ==========================
 -- TYPES D'OPERATIONS
