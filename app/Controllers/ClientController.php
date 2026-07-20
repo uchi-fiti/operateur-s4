@@ -300,6 +300,7 @@ class ClientController extends BaseController
 
 
         $typeId = $this->types->idParNom('Transfert');
+
         $frais  = $this->baremes->fraisPour($typeId, $montant);
 
         if ($frais === null) {
@@ -394,6 +395,56 @@ class ClientController extends BaseController
     // =====================================================================
     // AJAX
     // =====================================================================
+
+    /**
+     * Calcule les frais de transfert en fonction du montant et du destinataire.
+     * Retourne 0 pour les transferts externes, frais de OperationOperateur pour internes.
+     */
+    public function calculerFraisTransfert()
+    {
+        if (! session()->has('compte_id')) {
+            return $this->response->setStatusCode(401)->setJSON(['frais' => 0]);
+        }
+
+        $destinataire = trim((string) $this->request->getGet('destinataire'));
+        $montant = (float) $this->request->getGet('montant');
+
+        if (! preg_match('/^[0-9]{10}$/', $destinataire) || $montant <= 0) {
+            return $this->response->setJSON(['frais' => 0]);
+        }
+
+        // Transfert externe => pas de frais
+        if ($this->estTransfertExterne($destinataire)) {
+            return $this->response->setJSON(['frais' => 0]);
+        }
+
+        // Transfert interne => calcule frais depuis le barème
+        $typeId = $this->types->idParNom('Transfert');
+        $frais = $this->baremes->fraisPour($typeId, $montant);
+
+        return $this->response->setJSON(['frais' => $frais ?? 0]);
+    }
+
+    /**
+     * Calcule les frais de retrait pour un montant donné.
+     */
+    public function calculerFraisRetrait()
+    {
+        if (! session()->has('compte_id')) {
+            return $this->response->setStatusCode(401)->setJSON(['frais' => 0]);
+        }
+
+        $montant = (float) $this->request->getGet('montant');
+
+        if ($montant <= 0) {
+            return $this->response->setJSON(['frais' => 0]);
+        }
+
+        $typeId = $this->types->idParNom('Retrait');
+        $frais = $this->baremes->fraisPour($typeId, $montant);
+
+        return $this->response->setJSON(['frais' => $frais ?? 0]);
+    }
 
     /**
      * Verifie l'existence d'un destinataire pendant la saisie du numero.
