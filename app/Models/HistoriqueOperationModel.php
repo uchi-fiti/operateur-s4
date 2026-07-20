@@ -16,6 +16,43 @@ class HistoriqueOperationModel extends Model
      * Les jointures ramenent le nom du type et les coordonnees des deux comptes
      * afin que la vue puisse composer ses phrases sans requete supplementaire.
      */
+    /**
+     * Revenus (frais encaisses) par jour pour un operateur, sur les $jours
+     * derniers jours, jour courant inclus.
+     *
+     * Les frais sont a la charge de celui qui declenche l'operation : le compte
+     * destination pour un depot (compte_source est NULL), le compte source pour
+     * un retrait ou un transfert. COALESCE ramene donc, dans tous les cas, le
+     * compte qui a paye les frais, ce qui permet de rattacher l'operation a son
+     * operateur via compte_client.operateur_id.
+     *
+     * Retourne un tableau ['AAAA-MM-JJ' => revenus]. Les journees sans operation
+     * sont absentes : c'est a l'appelant de les completer a zero.
+     */
+    public function revenusParJour(int $operateurId, int $jours = 7): array
+    {
+        $depuis = date('Y-m-d', strtotime('-' . ($jours - 1) . ' days'));
+
+        $sql = 'SELECT DATE(h.date_operation) AS jour, SUM(h.frais) AS revenus
+                FROM historique_operation h
+                JOIN compte_client c
+                  ON c.id = COALESCE(h.compte_source, h.compte_destination)
+                WHERE c.operateur_id = ?
+                  AND DATE(h.date_operation) >= ?
+                GROUP BY DATE(h.date_operation)
+                ORDER BY jour ASC';
+
+        $lignes = $this->db->query($sql, [$operateurId, $depuis])->getResultArray();
+
+        $revenus = [];
+
+        foreach ($lignes as $ligne) {
+            $revenus[$ligne['jour']] = (float) $ligne['revenus'];
+        }
+
+        return $revenus;
+    }
+
     public function pourCompte(int $compteId): array
     {
         return $this->db->table('historique_operation h')

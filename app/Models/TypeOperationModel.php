@@ -20,4 +20,4 @@ class TypeOperationModel extends Model
 
         return $ligne ? (int) $ligne['id'] : null;
     }
-
+}
