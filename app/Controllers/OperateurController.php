@@ -4,6 +4,8 @@ namespace App\Controllers;
 
 use App\Models\GerantOperateurModel;
 use App\Models\PrefixeOperateurModel;
+use App\Models\OperateurModel;
+
 
 class OperateurController extends BaseController
 {
@@ -70,14 +72,28 @@ class OperateurController extends BaseController
         ]);
     }
 
-    public function comptesClients()
-    {
-        if (! session()->get('operateur_logged_in')) {
-            return redirect()->to('/operateur/login');
-        }
-
-        return view('operateur/comptes-clients');
+public function comptesClients()
+{
+    if (! session()->get('operateur_logged_in')) {
+        return redirect()->to('/operateur/login');
     }
+
+    $operateurId = (int) session()->get('operateur_id');
+
+    $prefixModel    = new PrefixeOperateurModel();
+
+    $result = $prefixModel->select("prefixe_operateur.prefixe AS prefixe, COUNT(compte_client.id) AS nombre_comptes")
+        ->join('compte_client', "compte_client.operateur_id = prefixe_operateur.operateur_id AND compte_client.telephone LIKE prefixe_operateur.prefixe || '%'", 'left')
+        ->where('prefixe_operateur.operateur_id', $operateurId)
+        ->groupBy('prefixe_operateur.id, prefixe_operateur.prefixe, prefixe_operateur.date_creation')
+        ->orderBy('prefixe_operateur.prefixe', 'ASC')
+        ->findAll();
+
+    return view('operateur/comptes-clients', [
+        'results' => $result,
+    ]);
+
+}
 
     public function addPrefix()
     {
