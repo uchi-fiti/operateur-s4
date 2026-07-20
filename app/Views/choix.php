@@ -46,7 +46,7 @@
           </a>
         </div>
         <div class="col-12 col-sm-6 d-flex">
-          <a class="btn btn-secondaire btn-choix" href="operateur/login">
+          <a class="btn btn-secondaire btn-choix" href="/operateur/login">
             Opérateur
             <small>Administrer la plateforme</small>
           </a>

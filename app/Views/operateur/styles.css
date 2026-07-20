@@ -1,0 +1,278 @@
+/* ============================================================
+   Mobile Money : theme Bootstrap personnalise
+   Palette : #ffffff #e5e5e5 #fca311 #14213d #000000
+   ============================================================ */
+
+:root {
+  --blanc: #ffffff;
+  --gris: #e5e5e5;
+  --orange: #fca311;
+  --marine: #14213d;
+  --noir: #000000;
+
+  --sidebar-largeur: 250px;
+
+  /* Surcharges Bootstrap */
+  --bs-body-font-family: 'Stack Sans Headline', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --bs-body-bg: #e5e5e5;
+  --bs-body-color: #000000;
+  --bs-border-color: #e5e5e5;
+  --bs-border-radius: 3px;
+  --bs-border-radius-sm: 3px;
+  --bs-border-radius-lg: 3px;
+  --bs-border-radius-xl: 3px;
+  --bs-border-radius-2xl: 3px;
+  --bs-border-radius-pill: 3px;
+}
+
+body {
+  font-family: var(--bs-body-font-family);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--marine);
+}
+
+/* ---------- Sidebar ---------- */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--sidebar-largeur);
+  height: 100vh;
+  background-color: var(--marine);
+  display: flex;
+  flex-direction: column;
+  z-index: 1030;
+}
+
+.sidebar-logo {
+  padding: 28px 24px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--blanc);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.sidebar-logo span {
+  color: var(--orange);
+}
+
+.sidebar-role {
+  padding: 16px 24px 8px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--gris);
+  opacity: 0.7;
+  margin: 0;
+}
+
+.sidebar .nav {
+  flex: 1;
+}
+
+.sidebar .nav-link {
+  padding: 14px 24px;
+  color: var(--gris);
+  border-left: 4px solid transparent;
+  border-radius: 0;
+}
+
+.sidebar .nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+  color: var(--blanc);
+}
+
+.sidebar .nav-link.active {
+  background-color: rgba(252, 163, 17, 0.12);
+  border-left-color: var(--orange);
+  color: var(--blanc);
+  font-weight: 700;
+}
+
+.sidebar-pied {
+  padding: 20px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.sidebar-pied a {
+  color: var(--gris);
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.sidebar-pied a:hover {
+  color: var(--orange);
+}
+
+/* ---------- Zone principale ---------- */
+.contenu {
+  margin-left: var(--sidebar-largeur);
+  padding: 40px;
+  min-height: 100vh;
+}
+
+.sous-titre {
+  color: #55607a;
+  font-size: 14px;
+  margin: 4px 0 0;
+}
+
+/* ---------- Cartes ---------- */
+.card {
+  background-color: var(--blanc);
+  border: 1px solid var(--gris);
+}
+
+.card-body {
+  padding: 28px;
+}
+
+/* ---------- Boutons : meme taille de police partout ---------- */
+.btn {
+  font-family: var(--bs-body-font-family);
+  font-size: 16px;
+  padding: 12px 24px;
+  line-height: 1.5;
+}
+
+.btn-principal {
+  background-color: var(--orange);
+  border-color: var(--orange);
+  color: var(--noir);
+  font-weight: 700;
+}
+
+.btn-principal:hover,
+.btn-principal:focus {
+  background-color: #e59310;
+  border-color: #e59310;
+  color: var(--noir);
+}
+
+.btn-secondaire {
+  background-color: var(--marine);
+  border-color: var(--marine);
+  color: var(--blanc);
+}
+
+.btn-secondaire:hover,
+.btn-secondaire:focus {
+  background-color: #1d2f56;
+  border-color: #1d2f56;
+  color: var(--blanc);
+}
+
+.btn-neutre {
+  background-color: var(--blanc);
+  border-color: var(--marine);
+  color: var(--marine);
+}
+
+.btn-neutre:hover,
+.btn-neutre:focus {
+  background-color: var(--gris);
+  color: var(--marine);
+}
+
+/* ---------- Formulaires ---------- */
+.form-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--marine);
+  margin-bottom: 8px;
+}
+
+.form-control,
+.form-select {
+  font-family: var(--bs-body-font-family);
+  font-size: 16px;
+  padding: 12px 14px;
+  border-color: #c8ccd6;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 3px rgba(252, 163, 17, 0.25);
+}
+
+.form-text {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* ---------- Tableaux ---------- */
+.table > thead th {
+  background-color: var(--marine);
+  color: var(--blanc);
+  padding: 14px 16px;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+  border-bottom: none;
+}
+
+.table > tbody td {
+  padding: 14px 16px;
+  border-bottom-color: var(--gris);
+}
+
+/* ---------- Pages centrees (choix / connexion) ---------- */
+.page-centree {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background-color: var(--marine);
+}
+
+.boite {
+  background-color: var(--blanc);
+  border-radius: var(--bs-border-radius);
+  padding: 40px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.lien-retour {
+  display: block;
+  margin-top: 24px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--marine);
+}
+
+/* ---------- Modal ---------- */
+.modal-content {
+  border: none;
+  border-radius: var(--bs-border-radius);
+}
+
+.modal-header {
+  background-color: var(--marine);
+  color: var(--blanc);
+  padding: 20px 28px;
+  border-bottom: none;
+  border-radius: 0;
+}
+
+.modal-title {
+  color: var(--blanc);
+  font-size: 18px;
+}
+
+.modal-header .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+.modal-body {
+  padding: 28px;
+}
+
+.modal-footer {
+  border-top: none;
+  padding: 0 28px 28px;
+}
