@@ -6,6 +6,10 @@ use App\Models\CompteClientModel;
 use App\Models\HistoriqueOperationModel;
 use App\Models\OperationOperateurModel;
 use App\Models\TypeOperationModel;
+
+use App\Models\PrefixeOperateurModel;
+use App\Models\CommissionOperateurModel;
+
 use CodeIgniter\HTTP\RedirectResponse;
 
 class ClientController extends BaseController
@@ -278,6 +282,7 @@ class ClientController extends BaseController
             return $redirection;
         }
 
+
         $destinataire = trim((string) $this->request->getPost('destinataire'));
         $montant      = $this->montantSaisi('montant');
         $code         = trim((string) $this->request->getPost('code'));
@@ -291,19 +296,11 @@ class ClientController extends BaseController
                 ->with('erreur', 'Le montant doit être un nombre strictement positif.');
         }
 
-        $beneficiaire = $this->comptes->parTelephone($destinataire);
 
-        if ($beneficiaire === null) {
-            return redirect()->back()->withInput()
-                ->with('erreur', "Ce numéro de destinataire n'existe pas.");
-        }
 
-        if ((int) $beneficiaire['id'] === $compteId) {
-            return redirect()->back()->withInput()
-                ->with('erreur', 'Vous ne pouvez pas transférer de l\'argent vers votre propre compte.');
-        }
 
         $typeId = $this->types->idParNom('Transfert');
+
         $frais  = $this->baremes->fraisPour($typeId, $montant);
 
         if ($frais === null) {
@@ -325,6 +322,32 @@ class ClientController extends BaseController
             return redirect()->back()->withInput()
                 ->with('erreur', 'Code secret incorrect.');
         }
+
+        // Vérifie si c'est un transfert externe
+        if ($this->estTransfertExterne($destinataire)) {
+            if (! $this->faireTransfertExterne($destinataire, $montant, $frais, $compteId, $typeId)) {
+                return redirect()->back()->withInput()
+                    ->with('erreur', 'Préfixe non pris en charge.');
+            }
+
+            return redirect()->to('client/solde')
+                ->with('succes', 'Transfert externe de ' . $this->formater($montant) . ' Ar vers un autre opérateur '
+                    . ' effectué (frais : ' . $this->formater($frais) . ' Ar).');
+        }
+
+        $beneficiaire = $this->comptes->parTelephone($destinataire);
+
+        if ($beneficiaire === null) {
+            return redirect()->back()->withInput()
+                ->with('erreur', "Ce numéro de destinataire n'existe pas.");
+        }
+
+        if ((int) $beneficiaire['id'] === $compteId) {
+            return redirect()->back()->withInput()
+                ->with('erreur', 'Vous ne pouvez pas transférer de l\'argent vers votre propre compte.');
+        }
+
+        // Transfert interne
 
         $db = db_connect();
         $db->transStart();
@@ -374,6 +397,56 @@ class ClientController extends BaseController
     // =====================================================================
 
     /**
+     * Calcule les frais de transfert en fonction du montant et du destinataire.
+     * Retourne 0 pour les transferts externes, frais de OperationOperateur pour internes.
+     */
+    public function calculerFraisTransfert()
+    {
+        if (! session()->has('compte_id')) {
+            return $this->response->setStatusCode(401)->setJSON(['frais' => 0]);
+        }
+
+        $destinataire = trim((string) $this->request->getGet('destinataire'));
+        $montant = (float) $this->request->getGet('montant');
+
+        if (! preg_match('/^[0-9]{10}$/', $destinataire) || $montant <= 0) {
+            return $this->response->setJSON(['frais' => 0]);
+        }
+
+        // Transfert externe => pas de frais
+        if ($this->estTransfertExterne($destinataire)) {
+            return $this->response->setJSON(['frais' => 0]);
+        }
+
+        // Transfert interne => calcule frais depuis le barème
+        $typeId = $this->types->idParNom('Transfert');
+        $frais = $this->baremes->fraisPour($typeId, $montant);
+
+        return $this->response->setJSON(['frais' => $frais ?? 0]);
+    }
+
+    /**
+     * Calcule les frais de retrait pour un montant donné.
+     */
+    public function calculerFraisRetrait()
+    {
+        if (! session()->has('compte_id')) {
+            return $this->response->setStatusCode(401)->setJSON(['frais' => 0]);
+        }
+
+        $montant = (float) $this->request->getGet('montant');
+
+        if ($montant <= 0) {
+            return $this->response->setJSON(['frais' => 0]);
+        }
+
+        $typeId = $this->types->idParNom('Retrait');
+        $frais = $this->baremes->fraisPour($typeId, $montant);
+
+        return $this->response->setJSON(['frais' => $frais ?? 0]);
+    }
+
+    /**
      * Verifie l'existence d'un destinataire pendant la saisie du numero.
      */
     public function verifierDestinataire()
@@ -383,6 +456,40 @@ class ClientController extends BaseController
         }
 
         $telephone = trim((string) $this->request->getGet('telephone'));
+
+
+        $session = session();
+
+        $numeroExpediteur = preg_replace('/\D/', '', $session->get('telephone'));
+        $numeroDestinataire = preg_replace('/\D/', '', $telephone);
+
+        $prefixeExpediteur = substr($numeroExpediteur, 0, 3);
+        $prefixeDestinataire = substr($numeroDestinataire, 0, 3);
+
+        $prefixModel = new PrefixeOperateurModel();
+
+        // Recherche de l'opérateur de l'expéditeur
+        $operateurExpediteur = $prefixModel
+            ->where('prefixe', $prefixeExpediteur)
+            ->first();
+
+        if ($operateurExpediteur !== null) {
+
+            // Vérifie si le préfixe du destinataire appartient au même opérateur
+            $prefixe = $prefixModel
+                ->where('operateur_id', $operateurExpediteur['operateur_id'])
+                ->where('prefixe', $prefixeDestinataire)
+                ->first();
+
+            // Si le préfixe n'appartient pas à notre opérateur,
+            // on considère qu'il s'agit d'un autre opérateur.
+            if ($prefixe === null) {
+                return $this->response->setJSON([
+                    'existe'  => true,
+                    'message' => 'Numéro appartenant à un autre opérateur.',
+                ]);
+            }
+        }
 
         if (! preg_match('/^[0-9]{10}$/', $telephone)) {
             return $this->response->setJSON([
@@ -471,4 +578,79 @@ class ClientController extends BaseController
     {
         return number_format($montant, 0, ',', '.');
     }
+
+
+    /**
+     * Vérifie si le transfert est vers un numéro appartenant à un opérateur différent.
+     */
+    public function estTransfertExterne(string $numeroDestinataire): bool
+    {
+        $session = session();
+        $numeroExpediteur = preg_replace('/\D/', '', $session->get('telephone'));
+        $numeroDestinataire = preg_replace('/\D/', '', $numeroDestinataire);
+
+        $prefixeExpediteur = substr($numeroExpediteur, 0, 3);
+        $prefixeDestinataire = substr($numeroDestinataire, 0, 3);
+
+        // Si même préfixe => transfert interne
+        if ($prefixeExpediteur === $prefixeDestinataire) {
+            return false;
+        }
+
+        $prefixModel = new PrefixeOperateurModel();
+
+        // Récupère l'opérateur du préfixe expéditeur
+        $operateurExpediteur = $prefixModel->where('prefixe', $prefixeExpediteur)->first();
+        if ($operateurExpediteur === null) {
+            return false;
+        }
+
+        // Récupère l'opérateur du préfixe destinataire
+        $operateurDestinataire = $prefixModel->where('prefixe', $prefixeDestinataire)->first();
+        if ($operateurDestinataire === null) {
+            return true; // Préfixe inconnu => transfert externe
+        }
+
+        // Opérateurs différents => transfert externe
+        return $operateurDestinataire['operateur_id'] !== $operateurExpediteur['operateur_id'];
+    }
+    /**
+     * Effectue un transfert externe (vers un autre opérateur).
+     * Retourne true si succès, false sinon.
+     */
+    public function faireTransfertExterne(string $destinataire, float $montant, float $frais, int $compteId, int $typeId): bool
+    {
+        $commissionModel = new CommissionOperateurModel();
+        $prefixeDestinataire = substr(preg_replace('/\D/', '', $destinataire), 0, 3);
+
+        $commission = $commissionModel->where('prefixe_autre_operateur', $prefixeDestinataire)->first();
+        if ($commission === null) {
+            return false;
+        }
+
+        $valeur_commission = $montant * ($commission['pct_commission'] / 100);
+        $total = $montant + $frais;
+
+        $db = db_connect();
+        $db->transStart();
+
+        // Déduit le montant + frais du compte source
+        $this->comptes->ajusterSolde($compteId, -$total);
+
+        // Enregistre la transaction
+        $this->historiques->insert([
+            'type_operation_id'  => $typeId,
+            'compte_source'      => $compteId,
+            'compte_destination' => null,
+            'montant'            => $montant,
+            'frais'              => $frais,
+            'commission'         => $valeur_commission,
+            'date_operation'     => date('Y-m-d H:i:s'),
+        ]);
+
+        $db->transComplete();
+
+        return $db->transStatus() !== false;
+    }
+
 }

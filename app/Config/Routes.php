@@ -31,6 +31,12 @@ $routes->group('client', function ($routes) {
 
     // Appel AJAX : verification du destinataire pendant la saisie.
     $routes->get('verifier-destinataire', 'ClientController::verifierDestinataire');
+
+    // Appel AJAX : calcul des frais de transfert.
+    $routes->get('calculer-frais-transfert', 'ClientController::calculerFraisTransfert');
+
+    // Appel AJAX : calcul des frais de retrait.
+    $routes->get('calculer-frais-retrait', 'ClientController::calculerFraisRetrait');
 });
 
 $routes->get('/operateur/login', 'OperateurController::login');
