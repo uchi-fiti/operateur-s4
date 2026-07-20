@@ -21,6 +21,7 @@
     - Configuration du framework
 
 
+<<<<<<< HEAD
 - TO DO pour chaque page Fitiavana
 
 - Fonctionnalite Operateur Noah
@@ -38,6 +39,8 @@
 
     - Page detail client NOAH
         - Prefixe et nombre de comptes relies a ce prefixe
+=======
+>>>>>>> c8e90dd2d1d4dc247a1cf06f920e3ff45fadb75a
 ## Cote client (Fitiavana) [ok]
 - page connection client
 	- input numero de telephone
@@ -76,5 +79,9 @@
     - Ajout d'operation (frais , min , max)
 
 - Page detail client NOAH
+<<<<<<< HEAD
     - Prefixe et nombre de comptes relies a ce prefixe
 
+=======
+    - Prefixe et nombre de comptes relies a ce prefixe
+>>>>>>> c8e90dd2d1d4dc247a1cf06f920e3ff45fadb75a

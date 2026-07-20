@@ -6,8 +6,11 @@ use App\Models\CompteClientModel;
 use App\Models\HistoriqueOperationModel;
 use App\Models\OperationOperateurModel;
 use App\Models\TypeOperationModel;
+<<<<<<< HEAD
 use App\Models\PrefixeOperateurModel;
 use App\Models\CommissionOperateurModel;
+=======
+>>>>>>> c8e90dd2d1d4dc247a1cf06f920e3ff45fadb75a
 use CodeIgniter\HTTP\RedirectResponse;
 
 class ClientController extends BaseController
@@ -280,8 +283,11 @@ class ClientController extends BaseController
             return $redirection;
         }
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> c8e90dd2d1d4dc247a1cf06f920e3ff45fadb75a
         $destinataire = trim((string) $this->request->getPost('destinataire'));
         $montant      = $this->montantSaisi('montant');
         $code         = trim((string) $this->request->getPost('code'));
@@ -295,6 +301,21 @@ class ClientController extends BaseController
                 ->with('erreur', 'Le montant doit être un nombre strictement positif.');
         }
 
+<<<<<<< HEAD
+=======
+        $beneficiaire = $this->comptes->parTelephone($destinataire);
+
+        if ($beneficiaire === null) {
+            return redirect()->back()->withInput()
+                ->with('erreur', "Ce numéro de destinataire n'existe pas.");
+        }
+
+        if ((int) $beneficiaire['id'] === $compteId) {
+            return redirect()->back()->withInput()
+                ->with('erreur', 'Vous ne pouvez pas transférer de l\'argent vers votre propre compte.');
+        }
+
+>>>>>>> c8e90dd2d1d4dc247a1cf06f920e3ff45fadb75a
         $typeId = $this->types->idParNom('Transfert');
         $frais  = $this->baremes->fraisPour($typeId, $montant);
 
@@ -317,6 +338,7 @@ class ClientController extends BaseController
             return redirect()->back()->withInput()
                 ->with('erreur', 'Code secret incorrect.');
         }
+<<<<<<< HEAD
         
         // Vérifie si c'est un transfert externe
         if ($this->estTransfertExterne($destinataire)) {
@@ -343,6 +365,9 @@ class ClientController extends BaseController
         }
 
         // Transfert interne
+=======
+
+>>>>>>> c8e90dd2d1d4dc247a1cf06f920e3ff45fadb75a
         $db = db_connect();
         $db->transStart();
 
@@ -401,6 +426,7 @@ class ClientController extends BaseController
 
         $telephone = trim((string) $this->request->getGet('telephone'));
 
+<<<<<<< HEAD
         $session = session();
 
         $numeroExpediteur = preg_replace('/\D/', '', $session->get('telephone'));
@@ -434,6 +460,8 @@ class ClientController extends BaseController
             }
         }
 
+=======
+>>>>>>> c8e90dd2d1d4dc247a1cf06f920e3ff45fadb75a
         if (! preg_match('/^[0-9]{10}$/', $telephone)) {
             return $this->response->setJSON([
                 'existe'  => false,
@@ -521,6 +549,7 @@ class ClientController extends BaseController
     {
         return number_format($montant, 0, ',', '.');
     }
+<<<<<<< HEAD
 
     /**
      * Vérifie si le transfert est vers un numéro appartenant à un opérateur différent.
@@ -594,4 +623,6 @@ class ClientController extends BaseController
 
         return $db->transStatus() !== false;
     }
+=======
+>>>>>>> c8e90dd2d1d4dc247a1cf06f920e3ff45fadb75a
 }
