@@ -296,17 +296,7 @@ class ClientController extends BaseController
                 ->with('erreur', 'Le montant doit être un nombre strictement positif.');
         }
 
-        $beneficiaire = $this->comptes->parTelephone($destinataire);
 
-        if ($beneficiaire === null) {
-            return redirect()->back()->withInput()
-                ->with('erreur', "Ce numéro de destinataire n'existe pas.");
-        }
-
-        if ((int) $beneficiaire['id'] === $compteId) {
-            return redirect()->back()->withInput()
-                ->with('erreur', 'Vous ne pouvez pas transférer de l\'argent vers votre propre compte.');
-        }
 
 
         $typeId = $this->types->idParNom('Transfert');
