@@ -6,11 +6,11 @@ use App\Models\CompteClientModel;
 use App\Models\HistoriqueOperationModel;
 use App\Models\OperationOperateurModel;
 use App\Models\TypeOperationModel;
-<<<<<<< HEAD
+<<<<<<<<< Temporary merge branch 1
+=========
 use App\Models\PrefixeOperateurModel;
 use App\Models\CommissionOperateurModel;
-=======
->>>>>>> c8e90dd2d1d4dc247a1cf06f920e3ff45fadb75a
+>>>>>>>>> Temporary merge branch 2
 use CodeIgniter\HTTP\RedirectResponse;
 
 class ClientController extends BaseController
@@ -283,11 +283,11 @@ class ClientController extends BaseController
             return $redirection;
         }
 
-<<<<<<< HEAD
+<<<<<<<<< Temporary merge branch 1
+=========
 
 
-=======
->>>>>>> c8e90dd2d1d4dc247a1cf06f920e3ff45fadb75a
+>>>>>>>>> Temporary merge branch 2
         $destinataire = trim((string) $this->request->getPost('destinataire'));
         $montant      = $this->montantSaisi('montant');
         $code         = trim((string) $this->request->getPost('code'));
@@ -301,8 +301,7 @@ class ClientController extends BaseController
                 ->with('erreur', 'Le montant doit être un nombre strictement positif.');
         }
 
-<<<<<<< HEAD
-=======
+<<<<<<<<< Temporary merge branch 1
         $beneficiaire = $this->comptes->parTelephone($destinataire);
 
         if ($beneficiaire === null) {
@@ -315,7 +314,8 @@ class ClientController extends BaseController
                 ->with('erreur', 'Vous ne pouvez pas transférer de l\'argent vers votre propre compte.');
         }
 
->>>>>>> c8e90dd2d1d4dc247a1cf06f920e3ff45fadb75a
+=========
+>>>>>>>>> Temporary merge branch 2
         $typeId = $this->types->idParNom('Transfert');
         $frais  = $this->baremes->fraisPour($typeId, $montant);
 
@@ -338,7 +338,9 @@ class ClientController extends BaseController
             return redirect()->back()->withInput()
                 ->with('erreur', 'Code secret incorrect.');
         }
-<<<<<<< HEAD
+<<<<<<<<< Temporary merge branch 1
+
+=========
         
         // Vérifie si c'est un transfert externe
         if ($this->estTransfertExterne($destinataire)) {
@@ -365,9 +367,7 @@ class ClientController extends BaseController
         }
 
         // Transfert interne
-=======
-
->>>>>>> c8e90dd2d1d4dc247a1cf06f920e3ff45fadb75a
+>>>>>>>>> Temporary merge branch 2
         $db = db_connect();
         $db->transStart();
 
@@ -426,7 +426,8 @@ class ClientController extends BaseController
 
         $telephone = trim((string) $this->request->getGet('telephone'));
 
-<<<<<<< HEAD
+<<<<<<<<< Temporary merge branch 1
+=========
         $session = session();
 
         $numeroExpediteur = preg_replace('/\D/', '', $session->get('telephone'));
@@ -460,8 +461,7 @@ class ClientController extends BaseController
             }
         }
 
-=======
->>>>>>> c8e90dd2d1d4dc247a1cf06f920e3ff45fadb75a
+>>>>>>>>> Temporary merge branch 2
         if (! preg_match('/^[0-9]{10}$/', $telephone)) {
             return $this->response->setJSON([
                 'existe'  => false,
@@ -549,7 +549,8 @@ class ClientController extends BaseController
     {
         return number_format($montant, 0, ',', '.');
     }
-<<<<<<< HEAD
+<<<<<<<<< Temporary merge branch 1
+=========
 
     /**
      * Vérifie si le transfert est vers un numéro appartenant à un opérateur différent.
@@ -623,6 +624,5 @@ class ClientController extends BaseController
 
         return $db->transStatus() !== false;
     }
-=======
->>>>>>> c8e90dd2d1d4dc247a1cf06f920e3ff45fadb75a
+>>>>>>>>> Temporary merge branch 2
 }
