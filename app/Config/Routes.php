@@ -14,3 +14,6 @@ $routes->post('/operateur/prefixes', 'OperateurController::addPrefix');
 $routes->get('/operateur/comptes-clients', 'OperateurController::comptesClients');
 $routes->get('/operateur/operations', 'OperationOperateurController::new');
 $routes->post('/operateur/operations', 'OperationOperateurController::create');
+$routes->get('/operateur/operations/(:num)/edit', 'OperationOperateurController::edit/$1');
+$routes->post('/operateur/operations/update/(:num)', 'OperationOperateurController::update/$1');
+// $routes->delete('/operateur/operations/(:num)', 'OperationOperateurController::delete');

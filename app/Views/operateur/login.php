@@ -23,13 +23,13 @@
         <div class="mb-3">
           <label for="utilisateur" class="form-label">Nom d'utilisateur</label>
           <input type="text" class="form-control" id="utilisateur" name="utilisateur"
-                 placeholder="ex : rakoto.jean" required>
+                 placeholder="ex : rakoto.jean" value="admin_telma" required>
         </div>
 
         <div class="mb-4">
           <label for="motdepasse" class="form-label">Mot de passe</label>
           <input type="password" class="form-control" id="motdepasse" name="motdepasse"
-                 placeholder="••••••••" required>
+                 placeholder="••••••••" value="telma123" required>
         </div>
 
         <button type="submit" class="btn btn-principal w-100">Se connecter</button>

@@ -62,6 +62,7 @@
                 <th scope="col">Montant min (Ar)</th>
                 <th scope="col">Montant max (Ar)</th>
                 <th scope="col">Frais (Ar)</th>
+                <th scope="col">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -71,6 +72,7 @@
                   <td><?= esc(number_format((float) $operation['montant_min'], 0, ',', ' ')) ?></td>
                   <td><?= esc(number_format((float) $operation['montant_max'], 0, ',', ' ')) ?></td>
                   <td><?= esc(number_format((float) $operation['frais'], 0, ',', ' ')) ?></td>
+                  <td><a href="/operateur/operations/<?= $operation['id'] ?>/edit" class="btn btn-sm btn-outline-primary">Modifier</a></td>
                 </tr>
               <?php endforeach; ?>
             </tbody>
