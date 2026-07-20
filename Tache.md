@@ -10,7 +10,7 @@
     - Forme generale des pages demandees
     - Details des pages
 
-- Design Fitiavana
+- Design Fitiavana [ok]
     - Choix de la palette de couleur globale
     - Choix de la police globale
     - Creation du template
@@ -21,7 +21,7 @@
     - Configuration du framework
 
 
-## Cote client [ok]
+## Cote client (Fitiavana) [ok]
 - page connection client
 	- input numero de telephone
 	- fonction verifier si numero existe
@@ -44,3 +44,19 @@
 	- fonction verifier destinataire
 - page historique
 	- fonction historique (get all historique)
+
+# Cote operateur (NOah) [ok]
+- Fonctionnalite Operateur Noah
+- Page des prefixes NOAH
+    - Liste des prefixes pour l'operateur gere par l'utilisateur connecte
+    - Compte relie a ce prefixe
+    - Formulaire d'insertion de prefixe :
+        - Ne peut pas inserer un prefixe deja existant
+
+- Page operation NOAH
+    - Historique des operations
+    - Filtre par type d'operation
+    - Ajout d'operation (frais , min , max)
+
+- Page detail client NOAH
+    - Prefixe et nombre de comptes relies a ce prefixe
