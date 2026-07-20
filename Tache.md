@@ -10,7 +10,7 @@
     - Forme generale des pages demandees
     - Details des pages
 
-- Design Noah
+- Design Fitiavana
     - Choix de la palette de couleur
     - Creation de template
 
