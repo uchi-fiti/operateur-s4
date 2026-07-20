@@ -7,7 +7,9 @@ class HistoriqueOperationModel extends Model
 {
     protected $table = 'historique_operation';
     protected $primaryKey = 'id';
+
     protected $allowedFields = ['type_operation_id', 'compte_source', 'compte_destination', 'montant', 'frais', 'date_operation', 'commission'];
+
 
     /**
      * Toutes les operations touchant un compte, qu'il soit source ou destination,

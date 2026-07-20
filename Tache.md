@@ -38,6 +38,7 @@
 
     - Page detail client NOAH
         - Prefixe et nombre de comptes relies a ce prefixe
+        - 
 ## Cote client (Fitiavana) [ok]
 - page connection client
 	- input numero de telephone
@@ -62,7 +63,7 @@
 - page historique
 	- fonction historique (get all historique)
 
-# Cote operateur (NOah) [ok]
+# Cote operateur (Noah) [ok]
 - Fonctionnalite Operateur Noah
 - Page des prefixes NOAH
     - Liste des prefixes pour l'operateur gere par l'utilisateur connecte
@@ -77,4 +78,3 @@
 
 - Page detail client NOAH
     - Prefixe et nombre de comptes relies a ce prefixe
-

@@ -6,6 +6,7 @@ use App\Models\CompteClientModel;
 use App\Models\HistoriqueOperationModel;
 use App\Models\OperationOperateurModel;
 use App\Models\TypeOperationModel;
+
 use App\Models\PrefixeOperateurModel;
 use App\Models\CommissionOperateurModel;
 use CodeIgniter\HTTP\RedirectResponse;
@@ -280,8 +281,6 @@ class ClientController extends BaseController
             return $redirection;
         }
 
-
-
         $destinataire = trim((string) $this->request->getPost('destinataire'));
         $montant      = $this->montantSaisi('montant');
         $code         = trim((string) $this->request->getPost('code'));
@@ -293,6 +292,18 @@ class ClientController extends BaseController
         if ($montant === null) {
             return redirect()->back()->withInput()
                 ->with('erreur', 'Le montant doit être un nombre strictement positif.');
+        }
+
+        $beneficiaire = $this->comptes->parTelephone($destinataire);
+
+        if ($beneficiaire === null) {
+            return redirect()->back()->withInput()
+                ->with('erreur', "Ce numéro de destinataire n'existe pas.");
+        }
+
+        if ((int) $beneficiaire['id'] === $compteId) {
+            return redirect()->back()->withInput()
+                ->with('erreur', 'Vous ne pouvez pas transférer de l\'argent vers votre propre compte.');
         }
 
         $typeId = $this->types->idParNom('Transfert');
@@ -317,6 +328,7 @@ class ClientController extends BaseController
             return redirect()->back()->withInput()
                 ->with('erreur', 'Code secret incorrect.');
         }
+
         
         // Vérifie si c'est un transfert externe
         if ($this->estTransfertExterne($destinataire)) {
@@ -343,6 +355,7 @@ class ClientController extends BaseController
         }
 
         // Transfert interne
+
         $db = db_connect();
         $db->transStart();
 
@@ -400,6 +413,7 @@ class ClientController extends BaseController
         }
 
         $telephone = trim((string) $this->request->getGet('telephone'));
+
 
         $session = session();
 
@@ -594,4 +608,5 @@ class ClientController extends BaseController
 
         return $db->transStatus() !== false;
     }
+
 }
