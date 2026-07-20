@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Models\GerantOperateurModel;
+use App\Models\PrefixeOperateurModel;
 
 class OperateurController extends BaseController
 {
@@ -53,7 +54,20 @@ class OperateurController extends BaseController
             return redirect()->to('/operateur/login');
         }
 
-        return view('operateur/prefixes');
+        $operateurId = (int) session()->get('operateur_id');
+        $prefixeModel = new PrefixeOperateurModel();
+
+        $prefixes = $prefixeModel
+            ->select('prefixe_operateur.id, prefixe_operateur.prefixe, prefixe_operateur.date_creation, COUNT(compte_client.id) AS nombre_comptes')
+            ->join('compte_client', "compte_client.operateur_id = prefixe_operateur.operateur_id AND compte_client.telephone LIKE prefixe_operateur.prefixe || '%'", 'left')
+            ->where('prefixe_operateur.operateur_id', $operateurId)
+            ->groupBy('prefixe_operateur.id, prefixe_operateur.prefixe, prefixe_operateur.date_creation')
+            ->orderBy('prefixe_operateur.prefixe', 'ASC')
+            ->findAll();
+
+        return view('operateur/prefixes', [
+            'prefixes' => $prefixes,
+        ]);
     }
 
     public function comptesClients()
@@ -63,5 +77,34 @@ class OperateurController extends BaseController
         }
 
         return view('operateur/comptes-clients');
+    }
+
+    public function addPrefix()
+    {
+        if (! session()->get('operateur_logged_in')) {
+            return redirect()->to('/operateur/login');
+        }
+
+        $prefixe = (string) $this->request->getPost('prefixe');
+        $operateurId = (int) session()->get('operateur_id');
+
+        $prefixeModel = new PrefixeOperateurModel();
+
+        $prefixeInstance = $prefixeModel
+            ->where('prefixe', $prefixe)
+            ->first();
+
+        if($prefixeInstance !== null) {
+            return redirect()
+                ->to('/operateur/prefixes')
+                ->with('error', 'Le préfixe est déjà pris.');
+        }
+        $prefixeModel->insert([
+            'operateur_id' => $operateurId,
+            'prefixe' => $prefixe,
+            'date_creation' => date('Y-m-d H:i:s'),
+        ]);
+
+        return redirect()->to('/operateur/prefixes');
     }
 }
