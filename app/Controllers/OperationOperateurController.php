@@ -27,15 +27,19 @@ class OperationOperateurController extends BaseController
 
         $operationModel = new OperationOperateurModel();
         $typeOperationModel = new TypeOperationModel();
-
+        $operationId = $this->request->getGet("typeOperation");
         $operations = $operationModel
             ->select('operation_operateur.*, type_operation.nom AS type_nom')
-            ->join('type_operation', 'type_operation.id = operation_operateur.type_operation_id')
-            ->orderBy('operation_operateur.id', 'DESC')
+            ->join('type_operation', 'type_operation.id = operation_operateur.type_operation_id');
+
+        if($operationId !== null && $operationId !== ''){
+            $operations->where("operation_operateur.type_operation_id", $operationId);
+        }
+            $result = $operations->orderBy('operation_operateur.id', 'DESC')
             ->findAll();
 
         return view('operateur/operations', [
-            'operations' => $operations,
+            'operations' => $result,
             'typeOperations' => $typeOperationModel->findAll(),
         ]);
     }
