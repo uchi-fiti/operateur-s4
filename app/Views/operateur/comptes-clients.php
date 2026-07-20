@@ -56,17 +56,20 @@
       </div>
     </div>
 
+    <?php foreach($results as $result): ?>
     <div class="row g-4">
       <div class="col-12 col-md-6 col-lg-4">
         <section class="card carte-stat h-100">
           <div class="card-body">
-            <p class="stat-libelle">Clients inscrits</p>
-            <p class="stat-valeur">2 730</p>
+            <p class="stat-libelle">Clients inscrits au <?= $result['prefixe'] ?></p>
+            <p class="stat-valeur"><?= $result['nombre_comptes'] ?></p>
             <p class="stat-note">Total des comptes créés depuis l'ouverture du service.</p>
           </div>
         </section>
       </div>
     </div>
+    </br>
+    <?php endforeach; ?>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
