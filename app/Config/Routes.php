@@ -32,3 +32,16 @@ $routes->group('client', function ($routes) {
     // Appel AJAX : verification du destinataire pendant la saisie.
     $routes->get('verifier-destinataire', 'ClientController::verifierDestinataire');
 });
+
+$routes->get('/operateur/login', 'OperateurController::login');
+$routes->post('/operateur/login', 'OperateurController::authenticate');
+$routes->get('/operateur/dashboard', 'OperateurController::dashboard');
+$routes->get('/operateur/prefixes', 'OperateurController::prefixes');
+$routes->post('/operateur/prefixes', 'OperateurController::addPrefix');
+$routes->get('/operateur/comptes-clients', 'OperateurController::comptesClients');
+$routes->get('/operateur/operations', 'OperationOperateurController::new');
+$routes->post('/operateur/operations', 'OperationOperateurController::create');
+$routes->get('/operateur/operations/(:num)/edit', 'OperationOperateurController::edit/$1');
+$routes->post('/operateur/operations/update/(:num)', 'OperationOperateurController::update/$1');
+// $routes->delete('/operateur/operations/(:num)', 'OperationOperateurController::delete');
+

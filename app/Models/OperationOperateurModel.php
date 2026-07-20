@@ -48,4 +48,7 @@ class OperationOperateurModel extends Model
             'maximum' => (float) $ligne['maximum'],
         ];
     }
+    public function getGainsVenantDeFrais(){
+        return $this->selectSum("frais", "fraisTotaux");
+    }
 }

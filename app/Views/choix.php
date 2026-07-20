@@ -40,13 +40,14 @@
 
       <div class="row g-3">
         <div class="col-12 col-sm-6 d-flex">
+
           <a class="btn btn-principal btn-choix" href="<?= site_url('client/login') ?>">
             Client
             <small>Gérer mon compte</small>
           </a>
         </div>
         <div class="col-12 col-sm-6 d-flex">
-          <a class="btn btn-secondaire btn-choix" href="operateur/login.html">
+          <a class="btn btn-secondaire btn-choix" href="/operateur/login">
             Opérateur
             <small>Administrer la plateforme</small>
           </a>
