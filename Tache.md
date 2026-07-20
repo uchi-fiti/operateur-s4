@@ -20,3 +20,20 @@
     - Configuration du framework
 
 - TO DO pour chaque page Fitiavana
+
+- Fonctionnalite Operateur Noah
+
+    - Page des prefixes NOAH
+        - Liste des prefixes pour l'operateur gere par l'utilisateur connecte
+        - Compte relie a ce prefixe
+        - Formulaire d'insertion de prefixe :
+            - Ne peut pas inserer un prefixe deja existant
+
+    - Page operation NOAH
+        - Historique des operations
+        - Filtre par type d'operation
+        - Ajout d'operation (frais , min , max)
+
+    - Page detail client NOAH
+        - Prefixe et nombre de comptes relies a ce prefixe
+
