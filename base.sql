@@ -189,3 +189,4 @@ INSERT INTO historique_operation (type_operation_id, compte_source, compte_desti
 insert into commission_operateur (prefixe_autre_operateur, pct_commission) values
 ('033', 5.00),
 ('032', 3.00);
+
