@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Models\CommissionAutresOperateursModel;
 use App\Models\GerantOperateurModel;
 use App\Models\HistoriqueOperationModel;
 use App\Models\PrefixeOperateurModel;
@@ -48,44 +49,147 @@ class OperateurController extends BaseController
             return redirect()->to('/operateur/login');
         }
 
-        $operateurId = (int) session()->get('operateur_id');
-        $nombreJours = 7;
-
         $historiqueModel = new HistoriqueOperationModel();
-        $revenus         = $historiqueModel->revenusParJour($operateurId, $nombreJours);
 
-        // La requete ne renvoie que les journees ayant au moins une operation :
-        // on reconstruit ici la serie complete pour que le graphique affiche
-        // toujours 7 barres, y compris a zero.
-        $libelles = [];
-        $valeurs  = [];
-
-        for ($i = $nombreJours - 1; $i >= 0; $i--) {
-            $jour = date('Y-m-d', strtotime('-' . $i . ' days'));
-
-            $libelles[] = $this->libelleJour($jour);
-            $valeurs[]  = $revenus[$jour] ?? 0;
-        }
+        $gainsAutres = $historiqueModel->gainsAutresOperateurs();
 
         return view('operateur/dashboard', [
-            'libelles'    => $libelles,
-            'valeurs'     => $valeurs,
-            'nombreJours' => $nombreJours,
-            'total'       => array_sum($valeurs),
+            'titre'           => 'Tableau de bord',
+            'sousTitre'       => 'Situation des gains via les différents frais.',
+            'actif'           => 'dashboard',
+            'revenuTotal'     => $historiqueModel->revenuTotal(),
+            'revenusParType'  => $historiqueModel->revenusParType(),
+            'gainsAutres'     => $gainsAutres,
+            'gainsAutresTotal' => array_sum(array_column($gainsAutres, 'gains')),
         ]);
     }
 
-    /**
-     * Libelle court en francais pour l'axe du graphique : « lun. 14/07 ».
-     * Construit a la main pour ne pas dependre de l'extension intl.
-     */
-    private function libelleJour(string $jour): string
+    // =====================================================================
+    // Prefixes des autres operateurs
+    // =====================================================================
+
+    public function prefixesAutres()
     {
-        $noms = ['Dim.', 'Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.'];
+        if (! session()->get('operateur_logged_in')) {
+            return redirect()->to('/operateur/login');
+        }
 
-        $horodatage = strtotime($jour);
+        $commissionModel = new CommissionAutresOperateursModel();
 
-        return $noms[(int) date('w', $horodatage)] . ' ' . date('d/m', $horodatage);
+        return view('operateur/prefixes-autres', [
+            'titre'     => 'Préfixes des autres opérateurs',
+            'sousTitre' => 'Préfixes vers lesquels vos clients peuvent transférer, et commission reversée.',
+            'actif'     => 'prefixes-autres',
+            'prefixes'  => $commissionModel->tous(),
+        ]);
+    }
+
+    public function showAjoutPrefixeAutre()
+    {
+        if (! session()->get('operateur_logged_in')) {
+            return redirect()->to('/operateur/login');
+        }
+
+        return view('operateur/prefixe-autre-ajout', [
+            'titre'     => 'Ajouter un préfixe partenaire',
+            'sousTitre' => 'Autoriser les transferts vers un autre opérateur.',
+            'actif'     => 'prefixes-autres',
+        ]);
+    }
+
+    public function addPrefixeAutre()
+    {
+        if (! session()->get('operateur_logged_in')) {
+            return redirect()->to('/operateur/login');
+        }
+
+        $prefixe = trim((string) $this->request->getPost('prefixe'));
+        $pct     = $this->request->getPost('pct_commission');
+
+        if (! preg_match('/^[0-9]{3}$/', $prefixe)) {
+            return redirect()->to('/operateur/prefixes-autres/ajouter')->withInput()
+                ->with('error', 'Le préfixe doit contenir exactement 3 chiffres.');
+        }
+
+        if (! is_numeric($pct) || (float) $pct < 0 || (float) $pct > 100) {
+            return redirect()->to('/operateur/prefixes-autres/ajouter')->withInput()
+                ->with('error', 'La commission doit être un pourcentage compris entre 0 et 100.');
+        }
+
+        // Un prefixe ne peut pas etre a la fois le notre et celui d'un partenaire :
+        // le transfert serait a la fois interne et externe.
+        $prefixeModel = new PrefixeOperateurModel();
+
+        if ($prefixeModel->where('prefixe', $prefixe)->first() !== null) {
+            return redirect()->to('/operateur/prefixes-autres/ajouter')->withInput()
+                ->with('error', 'Ce préfixe est déjà un de vos propres préfixes.');
+        }
+
+        $commissionModel = new CommissionAutresOperateursModel();
+
+        if ($commissionModel->parPrefixe($prefixe) !== null) {
+            return redirect()->to('/operateur/prefixes-autres/ajouter')->withInput()
+                ->with('error', 'Ce préfixe partenaire existe déjà.');
+        }
+
+        $commissionModel->insert([
+            'prefixe_autre_operateur' => $prefixe,
+            'pct_commission'          => (float) $pct,
+            'date_creation'           => date('Y-m-d H:i:s'),
+        ]);
+
+        return redirect()->to('/operateur/prefixes-autres')
+            ->with('succes', 'Préfixe ' . $prefixe . ' ajouté.');
+    }
+
+    public function updateCommission(int $id)
+    {
+        if (! session()->get('operateur_logged_in')) {
+            return redirect()->to('/operateur/login');
+        }
+
+        $pct = $this->request->getPost('pct_commission');
+
+        if (! is_numeric($pct) || (float) $pct < 0 || (float) $pct > 100) {
+            return redirect()->to('/operateur/prefixes-autres')
+                ->with('error', 'La commission doit être un pourcentage compris entre 0 et 100.');
+        }
+
+        $commissionModel = new CommissionAutresOperateursModel();
+
+        if ($commissionModel->find($id) === null) {
+            return redirect()->to('/operateur/prefixes-autres')
+                ->with('error', 'Ce préfixe partenaire est introuvable.');
+        }
+
+        // Seule la commission est modifiable : le prefixe reste fige, sinon
+        // l'historique deja enregistre ne correspondrait plus.
+        $commissionModel->update($id, ['pct_commission' => (float) $pct]);
+
+        return redirect()->to('/operateur/prefixes-autres')
+            ->with('succes', 'Commission mise à jour.');
+    }
+
+    // =====================================================================
+    // Montants a envoyer aux autres operateurs
+    // =====================================================================
+
+    public function montantsAEnvoyer()
+    {
+        if (! session()->get('operateur_logged_in')) {
+            return redirect()->to('/operateur/login');
+        }
+
+        $historiqueModel = new HistoriqueOperationModel();
+        $lignes          = $historiqueModel->montantsAEnvoyer();
+
+        return view('operateur/montants-a-envoyer', [
+            'titre'     => 'Montants à envoyer',
+            'sousTitre' => 'Ce que vous devez reverser à chaque opérateur partenaire.',
+            'actif'     => 'montants-a-envoyer',
+            'lignes'    => $lignes,
+            'total'     => array_sum(array_map(static fn ($l) => (float) $l['total'], $lignes)),
+        ]);
     }
 
     public function prefixes()

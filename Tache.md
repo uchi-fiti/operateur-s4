@@ -60,3 +60,23 @@
 
 - Page detail client NOAH
     - Prefixe et nombre de comptes relies a ce prefixe
+
+# TODO (v2):
+Côté opérateur
+- [ ] Ajouter colonne commission sur table historique_operation
+- [ ] Changer lien Préfixes -> Vos préfixes
+- [ ] Créer table commission_autres_operateurs (id, prefixe_autre_operateur, pct_commission)
+- [ ] Créer page Préfixes valables des autres opérateurs
+	- [ ] tableau (prefixe, commission_transfert, date ajout, action)
+- [ ] Créer page Ajouter préfixe valable pour autre opérateur
+	- [ ] input préfixe valable
+	- [ ] input commission_transfert
+	- [ ] valider
+- [ ] Ajouter carte revenu total en haut du dashboard
+- [ ] Ajouter camembert des revenus reparti par type d'operation sur le dashboard (mettre en haut)
+- [ ] Supprimer le diagramme en baton
+- [ ] Ajouter 2 boutons (sous forme de switch) juste après le titre du dashboard, pour basculer de notre opérateur aux autres opérateurs
+	- [ ] notre operateur: total revenu, camembert des revenus reparti par type d'operation
+	- [ ] autres opérateurs: total des gains des autres opérateurs, camembert des revenus reparti par prefixe (par operateur donc)
+- [ ] Créer page Montants à envoyer 
+	- [ ] tableau (prefixe operateur, montant à envoyer)
