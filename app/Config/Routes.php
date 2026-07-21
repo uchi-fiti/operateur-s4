@@ -13,6 +13,8 @@ $routes->get('/', 'Home::choix');
 // - mihena x % ny transfert rehetra
 $routes->group('client', function ($routes) {
     // Connexion en deux etapes : telephone puis code secret.
+    $routes->get('pctg_epargne', 'ClientController::pageEpargne');
+    $routes->get('epargne/update', 'ClientController::changerEpargne');
     $routes->get('login', 'ClientController::showLogin');
     $routes->post('login', 'ClientController::verifierTelephone');
     $routes->get('code-secret', 'ClientController::showCodeSecret');

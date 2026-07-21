@@ -52,7 +52,9 @@ CREATE TABLE compte_client (
     client_id INTEGER NOT NULL REFERENCES client(id),
     telephone VARCHAR(20) UNIQUE NOT NULL,
     code_secret VARCHAR(10) NOT NULL,
-    solde NUMERIC(15,2) DEFAULT 0
+    solde NUMERIC(15,2) DEFAULT 0,
+    pctg_epargne  NUMERIC(15,2) DEFAULT 0,
+    valeur_epargne  NUMERIC(15,2) DEFAULT 0
 );
 
 CREATE TABLE type_operation (
@@ -90,6 +92,10 @@ CREATE table promotion_transfert (
     valeur NUMERIC(5,2) NOT NULL DEFAULT 0
 );
 
+create table epargne_client_pct (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    telephone V
+);
 INSERT INTO promotion_transfert (valeur) values (0.1);
 -- ==========================
 -- NOTRE OPERATEUR (un seul)

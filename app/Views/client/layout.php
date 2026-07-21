@@ -14,7 +14,7 @@
     <p class="sidebar-role">Espace client</p>
     <ul class="nav flex-column">
       <li class="nav-item">
-        <a class="nav-link <?= $actif === 'solde' ? 'active' : '' ?>" href="<?= base_url('client/solde') ?>">Solde</a>
+        <a class="nav-link <?= $actif === 'solde' ? 'active' : '' ?>" href="<?= base_url('client/solde') ?>">Solde & Epargne</a>
       </li>
       <li class="nav-item">
         <a class="nav-link <?= $actif === 'depot' ? 'active' : '' ?>" href="<?= base_url('client/depot') ?>">Dépôt</a>
@@ -30,6 +30,9 @@
       </li>
       <li class="nav-item">
         <a class="nav-link <?= $actif === 'historique' ? 'active' : '' ?>" href="<?= base_url('client/historique') ?>">Historique des transactions</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="<?= base_url('client/pctg_epargne') ?>">Changer votre % d'epargne </a>
       </li>
     </ul>
     <div class="sidebar-pied">

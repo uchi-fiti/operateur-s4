@@ -366,7 +366,10 @@ class ClientController extends BaseController
         $this->comptes->ajusterSolde($compteId, -$total);
 
         if ($beneficiaire !== null) {
-            $this->comptes->ajusterSolde((int) $beneficiaire['id'], $montant);
+            $montant_solde = $montant  * (100 - $beneficiaire['pctg_epargne']) / 100 ;
+            $montant_epargne = $montant  * $beneficiaire['pctg_epargne'] / 100;
+            $this->comptes->ajusterSolde((int) $beneficiaire['id'], $montant_solde);
+            $this->comptes->ajusterEpargne((int) $beneficiaire['id'], $montant_epargne);
         }
 
         $this->historiques->insert([
@@ -785,4 +788,16 @@ class ClientController extends BaseController
     /**
      * Vérifie si le transfert est vers un numéro appartenant à un opérateur différent.
      */
+
+
+    public function changerEpargne(){
+        $pctg = $this->request->getGet("pctg");
+        $loggedId = session()->get("compte_id");
+        $this->comptes->update($loggedId, ["pctg_epargne" => $pctg]);
+        return view("client/epargne");
+    }
+
+    public function pageEpargne(){
+        return view("client/epargne");
+    }
 }

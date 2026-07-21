@@ -7,7 +7,7 @@ class CompteClientModel extends Model
 {
     protected $table = 'compte_client';
     protected $primaryKey = 'id';
-    protected $allowedFields = ['operateur_id', 'client_id', 'telephone', 'code_secret', 'solde'];
+    protected $allowedFields = ['operateur_id', 'client_id', 'telephone', 'code_secret', 'solde', 'pctg_epargne', 'valeur_epargne'];
 
     /**
      * Retourne le compte correspondant a un numero de telephone, ou null.
@@ -64,6 +64,14 @@ class CompteClientModel extends Model
     {
         $this->db->table('compte_client')
             ->set('solde', 'solde + ' . $this->db->escape($variation), false)
+            ->where('id', $compteId)
+            ->update();
+    }
+
+    public function ajusterEpargne(int $compteId, float $variation): void
+    {
+        $this->db->table('compte_client')
+            ->set('valeur_epargne', 'valeur_epargne + ' . $this->db->escape($variation), false)
             ->where('id', $compteId)
             ->update();
     }
