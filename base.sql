@@ -84,6 +84,13 @@ CREATE TABLE historique_operation (
     date_operation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+
+CREATE table promotion_transfert (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    valeur NUMERIC(5,2) NOT NULL DEFAULT 0
+);
+
+INSERT INTO promotion_transfert (valeur) values (0.1);
 -- ==========================
 -- NOTRE OPERATEUR (un seul)
 -- ==========================

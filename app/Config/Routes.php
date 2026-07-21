@@ -7,6 +7,10 @@ use CodeIgniter\Router\RouteCollection;
  */
 $routes->get('/', 'Home::choix');
 
+// alea  promotion sur le frais de transfert en poucentage
+// - meme operateur
+// - configration anaty base
+// - mihena x % ny transfert rehetra
 $routes->group('client', function ($routes) {
     // Connexion en deux etapes : telephone puis code secret.
     $routes->get('login', 'ClientController::showLogin');
@@ -41,6 +45,7 @@ $routes->group('client', function ($routes) {
 
     // Appel AJAX : calcul des frais de retrait.
     $routes->get('calculer-frais-retrait', 'ClientController::calculerFraisRetrait');
+
 });
 
 $routes->get('/operateur/login', 'OperateurController::login');
@@ -62,5 +67,7 @@ $routes->get('/operateur/operations', 'OperationOperateurController::new');
 $routes->post('/operateur/operations', 'OperationOperateurController::create');
 $routes->get('/operateur/operations/(:num)/edit', 'OperationOperateurController::edit/$1');
 $routes->post('/operateur/operations/update/(:num)', 'OperationOperateurController::update/$1');
+$routes->get('/operateur/promotions', 'OperateurController::showPromotion');
+
 // $routes->delete('/operateur/operations/(:num)', 'OperationOperateurController::delete');
 

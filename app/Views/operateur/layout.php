@@ -32,6 +32,9 @@
       <li class="nav-item">
         <a class="nav-link <?= $actif === 'comptes-clients' ? 'active' : '' ?>" href="/operateur/comptes-clients">Comptes clients</a>
       </li>
+      <li class="nav-item">
+        <a class="nav-link <?= $actif === 'promotion' ? 'active' : '' ?>" href="/operateur/promotions">Promotions</a>
+      </li>
     </ul>
     <div class="sidebar-pied">
       <a href="/operateur/login">Déconnexion</a>

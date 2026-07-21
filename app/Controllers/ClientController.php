@@ -7,6 +7,7 @@ use App\Models\CompteClientModel;
 use App\Models\HistoriqueOperationModel;
 use App\Models\OperationOperateurModel;
 use App\Models\TypeOperationModel;
+use App\Models\PromotionTransfertModel;
 
 
 use CodeIgniter\HTTP\RedirectResponse;
@@ -18,6 +19,7 @@ class ClientController extends BaseController
     protected OperationOperateurModel $baremes;
     protected TypeOperationModel $types;
     protected CommissionAutresOperateursModel $commissions;
+    protected PromotionTransfertModel $promotions;
 
     public function __construct()
     {
@@ -26,6 +28,7 @@ class ClientController extends BaseController
         $this->baremes     = new OperationOperateurModel();
         $this->types       = new TypeOperationModel();
         $this->commissions = new CommissionAutresOperateursModel();
+        $this->promotions = new PromotionTransfertModel();
     }
 
     // =====================================================================
@@ -44,6 +47,7 @@ class ClientController extends BaseController
     {
         $telephone = trim((string) $this->request->getPost('telephone'));
 
+        // numero de telephone: chiffre 0 a 9 avec exactement 10 de length
         if (! preg_match('/^[0-9]{10}$/', $telephone)) {
             return redirect()->back()->withInput()
                 ->with('erreur', 'Le numéro de téléphone doit contenir exactement 10 chiffres.');
@@ -130,7 +134,6 @@ class ClientController extends BaseController
             'compte'    => $compte,
         ]);
     }
-
     public function showDepot()
     {
         if ($redirection = $this->exigerConnexion()) {
@@ -321,6 +324,14 @@ class ClientController extends BaseController
 
         $frais  = $this->baremes->fraisPour($typeId, $montant);
 
+        $promotion = $this->promotions->getPromotion();
+
+        $promotionMessage = '';
+
+        if($promotion !== null) {
+            $frais = $frais - $frais * $promotion;
+            $promotionMessage = 'Une promotion de '. $promotion * 100 . ' % a été appliqué sur le frais de transfert'; 
+        }
         if ($frais === null) {
             return redirect()->back()->withInput()
                 ->with('erreur', $this->messageHorsBareme($typeId, 'transfert'));
@@ -379,7 +390,7 @@ class ClientController extends BaseController
 
         return redirect()->to('client/solde')
             ->with('succes', 'Transfert de ' . $this->formater($montant) . ' Ar vers '
-                . $destinataire . ' effectué (frais : ' . $this->formater($frais + $commission) . ' Ar).');
+                . $destinataire . ' effectué (frais : ' . $this->formater($frais + $commission) . ' Ar).' . $promotionMessage);
     }
 
     // =====================================================================

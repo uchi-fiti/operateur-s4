@@ -7,6 +7,7 @@ use App\Models\GerantOperateurModel;
 use App\Models\HistoriqueOperationModel;
 use App\Models\PrefixeOperateurModel;
 use App\Models\OperateurModel;
+use App\Models\PromotionTransfertModel;
 
 
 class OperateurController extends BaseController
@@ -216,7 +217,21 @@ class OperateurController extends BaseController
             'prefixes'  => $prefixes,
         ]);
     }
+    public function showPromotion() {
+        if (! session()->get('operateur_logged_in')) {
+            return redirect()->to('/operateur/login');
+        }
 
+        $promotionModel = new PromotionTransfertModel();
+
+        $promotions = $promotionModel->select('valeur')->findAll();
+        return view('operateur/promotions', [
+            'titre'     => 'Les promotions',
+            'sousTitre' => 'Liste des promotions disponibles',
+            'actif'     => 'promotion',
+            'promotions'  => $promotions,
+        ]);
+    }
 public function comptesClients()
 {
     if (! session()->get('operateur_logged_in')) {
