@@ -84,11 +84,6 @@ CREATE TABLE historique_operation (
     date_operation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE commission_operateur (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    prefixe_autre_operateur VARCHAR(5) NOT NULL,
-    pct_commission NUMERIC(5,2) NOT NULL
-);
 -- ==========================
 -- NOTRE OPERATEUR (un seul)
 -- ==========================
@@ -214,7 +209,3 @@ VALUES
 (3,2,NULL,'0339876543',5000,100,75),
 (3,4,NULL,'0327654321',30000,250,600),
 (3,5,NULL,'0311122233',2000,50,50);
-
-insert into commission_operateur (prefixe_autre_operateur, pct_commission) values
-('033', 5.00),
-('032', 3.00);

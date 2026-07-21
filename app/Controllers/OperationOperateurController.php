@@ -15,10 +15,45 @@ class OperationOperateurController extends BaseController
         return null;
     }
 
-    public function index()
+    /**
+     * Regles communes a la creation et a la modification d'un bareme.
+     *
+     * Retourne la liste des erreurs (vide si tout est valide). Les controles de
+     * coherence entre champs sont faits en PHP : le validateur de CodeIgniter
+     * compare un champ a une valeur, pas deux champs entre eux.
+     */
+    private function validerBareme(?int $ignorerId = null): array
     {
-        return redirect()->to('/operateur/operations');
+        $regles = [
+            'type_operation_id' => 'required|integer|is_not_unique[type_operation.id]',
+            'montant_min'       => 'required|numeric|greater_than_equal_to[0]',
+            'montant_max'       => 'required|numeric|greater_than_equal_to[0]',
+            'frais'             => 'required|numeric|greater_than_equal_to[0]',
+        ];
+
+        if (! $this->validate($regles)) {
+            return $this->validator->getErrors();
+        }
+
+        $typeId = (int) $this->request->getPost('type_operation_id');
+        $min    = (float) $this->request->getPost('montant_min');
+        $max    = (float) $this->request->getPost('montant_max');
+
+        if ($min >= $max) {
+            return ['montant_min' => 'Le montant minimum doit être strictement inférieur au montant maximum.'];
+        }
+
+        $conflit = (new OperationOperateurModel())->chevauchement($typeId, $min, $max, $ignorerId);
+
+        if ($conflit !== null) {
+            return ['montant_min' => 'Cette tranche chevauche une tranche existante ('
+                . number_format((float) $conflit['montant_min'], 0, ',', ' ') . ' à '
+                . number_format((float) $conflit['montant_max'], 0, ',', ' ') . ' Ar).'];
+        }
+
+        return [];
     }
+
     public function new()
     {
         if ($redirect = $this->ensureLoggedIn()) {
@@ -39,8 +74,13 @@ class OperationOperateurController extends BaseController
             ->findAll();
 
         return view('operateur/operations', [
-            'operations' => $result,
+            'titre'          => 'Opérations',
+            'sousTitre'      => "Grille des frais appliqués selon le type d'opération.",
+            'actif'          => 'operations',
+            'operations'     => $result,
             'typeOperations' => $typeOperationModel->findAll(),
+            // Permet au filtre de rester sur le type choisi apres soumission.
+            'typeChoisi'     => $operationId,
         ]);
     }
     public function create()
@@ -49,22 +89,21 @@ class OperationOperateurController extends BaseController
             return $redirect;
         }
 
-        $model = new OperationOperateurModel();
-        $data = $this->request->getPost();
-        $model->insert($data);
-        return redirect()->to('/operateur/operations');
-    }
-
-    public function modify()
-    {
-        if ($redirect = $this->ensureLoggedIn()) {
-            return $redirect;
+        if ($erreurs = $this->validerBareme()) {
+            return redirect()->to('/operateur/operations')->withInput()->with('errors', $erreurs);
         }
 
-        $model = new OperationOperateurModel();
-        $id = $this->request->getGet("id");
-        $modifiedObject = $model->find($id);
-        return view('operateur/operations', ["operation" => $modifiedObject]);
+        // Champs listes explicitement plutot que getPost() en bloc : le contenu
+        // insere ne depend pas de ce que le formulaire envoie.
+        (new OperationOperateurModel())->insert([
+            'type_operation_id' => $this->request->getPost('type_operation_id'),
+            'montant_min'       => $this->request->getPost('montant_min'),
+            'montant_max'       => $this->request->getPost('montant_max'),
+            'frais'             => $this->request->getPost('frais'),
+        ]);
+
+        return redirect()->to('/operateur/operations')
+            ->with('success', 'Barème ajouté avec succès.');
     }
 
     public function edit($id)
@@ -84,7 +123,10 @@ class OperationOperateurController extends BaseController
         $typeOperations = $typeOperationModel->findAll();
 
         return view('operateur/edit_operation', [
-            'operation' => $operation,
+            'titre'          => 'Modifier un barème',
+            'sousTitre'      => "Modifier les informations d'un barème de frais.",
+            'actif'          => 'operations',
+            'operation'      => $operation,
             'typeOperations' => $typeOperations,
         ]);
     }
@@ -102,18 +144,12 @@ class OperationOperateurController extends BaseController
         return redirect()->to('/operateur/operations');
     }
 
-    $rules = [
-        'type_operation_id' => 'required|integer',
-        'montant_min'       => 'required',
-        'montant_max'       => 'required',
-        'frais'             => 'required'
-    ];
-
-    if (!$this->validate($rules)) {
+    // La tranche modifiee ne doit pas se comparer a elle-meme.
+    if ($erreurs = $this->validerBareme((int) $id)) {
         return redirect()
-            ->back()
+            ->to('/operateur/operations/' . $id . '/edit')
             ->withInput()
-            ->with('errors', $this->validator->getErrors());
+            ->with('errors', $erreurs);
     }
 
     $model->update($id, [

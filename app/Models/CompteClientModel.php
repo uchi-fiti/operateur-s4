@@ -18,6 +18,29 @@ class CompteClientModel extends Model
     }
 
     /**
+     * Comptes correspondant a une liste de numeros, indexes par telephone.
+     *
+     * Les numeros inconnus sont simplement absents du tableau retourne :
+     * l'appelant compare les cles obtenues a la liste demandee pour savoir
+     * lesquels manquent. Une seule requete, quel que soit le nombre de numeros.
+     */
+    public function parTelephones(array $telephones): array
+    {
+        if ($telephones === []) {
+            return [];
+        }
+
+        $lignes  = $this->whereIn('telephone', $telephones)->findAll();
+        $indexes = [];
+
+        foreach ($lignes as $ligne) {
+            $indexes[$ligne['telephone']] = $ligne;
+        }
+
+        return $indexes;
+    }
+
+    /**
      * Compte enrichi du nom et du prenom du client (pour l'affichage).
      */
     public function avecClient(int $compteId): ?array

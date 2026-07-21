@@ -210,7 +210,10 @@ class OperateurController extends BaseController
             ->findAll();
 
         return view('operateur/prefixes', [
-            'prefixes' => $prefixes,
+            'titre'     => 'Vos préfixes',
+            'sousTitre' => 'Liste des préfixes téléphoniques que vous exploitez.',
+            'actif'     => 'prefixes',
+            'prefixes'  => $prefixes,
         ]);
     }
 
@@ -232,7 +235,10 @@ public function comptesClients()
         ->findAll();
 
     return view('operateur/comptes-clients', [
-        'results' => $result,
+        'titre'     => 'Comptes clients',
+        'sousTitre' => "Vue d'ensemble des comptes ouverts sur la plateforme.",
+        'actif'     => 'comptes-clients',
+        'results'   => $result,
     ]);
 
 }

@@ -27,6 +27,10 @@ $routes->group('client', function ($routes) {
     $routes->get('transfert', 'ClientController::showTransfert');
     $routes->post('transfert', 'ClientController::transfert');
 
+    // Envoi multiple : un montant reparti entre plusieurs numeros de notre operateur.
+    $routes->get('envoi-multiple', 'ClientController::showEnvoiMultiple');
+    $routes->post('envoi-multiple', 'ClientController::envoiMultiple');
+
     $routes->get('historique', 'ClientController::historique');
 
     // Appel AJAX : verification du destinataire pendant la saisie.

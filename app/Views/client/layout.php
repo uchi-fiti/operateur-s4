@@ -26,6 +26,9 @@
         <a class="nav-link <?= $actif === 'transfert' ? 'active' : '' ?>" href="<?= base_url('client/transfert') ?>">Transfert</a>
       </li>
       <li class="nav-item">
+        <a class="nav-link <?= $actif === 'envoi-multiple' ? 'active' : '' ?>" href="<?= base_url('client/envoi-multiple') ?>">Envoi multiple</a>
+      </li>
+      <li class="nav-item">
         <a class="nav-link <?= $actif === 'historique' ? 'active' : '' ?>" href="<?= base_url('client/historique') ?>">Historique des transactions</a>
       </li>
     </ul>

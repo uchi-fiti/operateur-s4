@@ -8,8 +8,6 @@ use App\Models\HistoriqueOperationModel;
 use App\Models\OperationOperateurModel;
 use App\Models\TypeOperationModel;
 
-use App\Models\PrefixeOperateurModel;
-use App\Models\CommissionOperateurModel;
 
 use CodeIgniter\HTTP\RedirectResponse;
 
@@ -349,32 +347,8 @@ class ClientController extends BaseController
                 ->with('erreur', 'Code secret incorrect.');
         }
 
-        // Vérifie si c'est un transfert externe
-        if ($this->estTransfertExterne($destinataire)) {
-            if (! $this->faireTransfertExterne($destinataire, $montant, $frais, $compteId, $typeId)) {
-                return redirect()->back()->withInput()
-                    ->with('erreur', 'Préfixe non pris en charge.');
-            }
-
-            return redirect()->to('client/solde')
-                ->with('succes', 'Transfert externe de ' . $this->formater($montant) . ' Ar vers un autre opérateur '
-                    . ' effectué (frais : ' . $this->formater($frais) . ' Ar).');
-        }
-
-        $beneficiaire = $this->comptes->parTelephone($destinataire);
-
-        if ($beneficiaire === null) {
-            return redirect()->back()->withInput()
-                ->with('erreur', "Ce numéro de destinataire n'existe pas.");
-        }
-
-        if ((int) $beneficiaire['id'] === $compteId) {
-            return redirect()->back()->withInput()
-                ->with('erreur', 'Vous ne pouvez pas transférer de l\'argent vers votre propre compte.');
-        }
-
-        // Transfert interne
-
+        // Un seul chemin d'ecriture pour les deux cas : seules changent les
+        // colonnes du destinataire et la commission (nulle en interne).
         $db = db_connect();
         $db->transStart();
 
@@ -406,6 +380,195 @@ class ClientController extends BaseController
         return redirect()->to('client/solde')
             ->with('succes', 'Transfert de ' . $this->formater($montant) . ' Ar vers '
                 . $destinataire . ' effectué (frais : ' . $this->formater($frais + $commission) . ' Ar).');
+    }
+
+    // =====================================================================
+    // Envoi multiple
+    // =====================================================================
+
+    /** Nombre de destinataires acceptes pour un envoi multiple. */
+    private const MIN_DESTINATAIRES = 2;
+    private const MAX_DESTINATAIRES = 10;
+
+    public function showEnvoiMultiple()
+    {
+        if ($redirection = $this->exigerConnexion()) {
+            return $redirection;
+        }
+
+        return view('client/envoi-multiple', [
+            'titre'     => 'Envoi multiple',
+            'sousTitre' => 'Répartissez un montant entre plusieurs numéros Telma.',
+            'actif'     => 'envoi-multiple',
+            'compte'    => $this->comptes->find($this->compteId()),
+            'minimum'   => self::MIN_DESTINATAIRES,
+            'maximum'   => self::MAX_DESTINATAIRES,
+        ]);
+    }
+
+    public function envoiMultiple(): RedirectResponse
+    {
+        if ($redirection = $this->exigerConnexion()) {
+            return $redirection;
+        }
+
+        $liste   = $this->nettoyerDestinataires($this->request->getPost('destinataires'));
+        $montant = $this->montantSaisi('montant');
+        $code    = trim((string) $this->request->getPost('code'));
+
+        $compteId = $this->compteId();
+        $compte   = $this->comptes->find($compteId);
+
+        if ($montant === null) {
+            return $this->echecEnvoiMultiple('Le montant doit être un nombre strictement positif.');
+        }
+
+        $nombre = count($liste);
+
+        if ($nombre < self::MIN_DESTINATAIRES) {
+            return $this->echecEnvoiMultiple('Indiquez au moins ' . self::MIN_DESTINATAIRES
+                . ' destinataires. Pour un envoi vers un seul numéro, utilisez la page Transfert.');
+        }
+
+        if ($nombre > self::MAX_DESTINATAIRES) {
+            return $this->echecEnvoiMultiple('Vous ne pouvez pas dépasser ' . self::MAX_DESTINATAIRES
+                . ' destinataires par envoi.');
+        }
+
+        if (count(array_unique($liste)) !== $nombre) {
+            return $this->echecEnvoiMultiple('La liste contient deux fois le même numéro.');
+        }
+
+        foreach ($liste as $numero) {
+            if (! preg_match('/^[0-9]{10}$/', $numero)) {
+                return $this->echecEnvoiMultiple('Le numéro « ' . $numero
+                    . ' » est invalide : 10 chiffres attendus, sans espace.');
+            }
+        }
+
+        // L'envoi multiple est reserve a notre operateur : chaque numero doit
+        // exister dans compte_client. Un prefixe partenaire est refuse, mais
+        // avec un message qui explique pourquoi.
+        $beneficiaires = $this->comptes->parTelephones($liste);
+
+        foreach ($liste as $numero) {
+            if (isset($beneficiaires[$numero])) {
+                continue;
+            }
+
+            $autreOp = $this->commissions->pourTelephone($numero);
+
+            return $this->echecEnvoiMultiple($autreOp !== null
+                ? 'Le numéro ' . $numero . ' appartient à un autre opérateur (préfixe '
+                    . $autreOp['prefixe_autre_operateur'] . "). L'envoi multiple est réservé aux numéros Telma."
+                : 'Le numéro ' . $numero . " n'existe pas.");
+        }
+
+        foreach ($beneficiaires as $numero => $beneficiaire) {
+            if ((int) $beneficiaire['id'] === $compteId) {
+                return $this->echecEnvoiMultiple('Vous ne pouvez pas vous inclure dans la liste des destinataires.');
+            }
+        }
+
+        // Le montant doit se diviser exactement : on ne veut ni arrondi silencieux
+        // ni reste attribue arbitrairement a l'un des destinataires.
+        if (fmod($montant, $nombre) != 0.0) {
+            $inferieur = floor($montant / $nombre) * $nombre;
+            $superieur = ceil($montant / $nombre) * $nombre;
+
+            return $this->echecEnvoiMultiple('Le montant doit être divisible par ' . $nombre
+                . ' pour être réparti en parts égales. Essayez ' . $this->formater($inferieur)
+                . ' ou ' . $this->formater($superieur) . ' Ar.');
+        }
+
+        $part   = $montant / $nombre;
+        $typeId = $this->types->idParNom('Transfert');
+
+        // Chaque part est un transfert a part entiere : les frais sont ceux de
+        // la tranche du bareme ou tombe la PART, et non le montant total.
+        $fraisPart = $this->baremes->fraisPour($typeId, $part);
+
+        if ($fraisPart === null) {
+            return $this->echecEnvoiMultiple('Part hors barème : ' . $this->formater($part)
+                . ' Ar par destinataire. ' . $this->messageHorsBareme($typeId, 'transfert'));
+        }
+
+        $fraisTotal = $fraisPart * $nombre;
+        $total      = $montant + $fraisTotal;
+
+        if ((float) $compte['solde'] < $total) {
+            return $this->echecEnvoiMultiple('Solde insuffisant : cet envoi coûte ' . $this->formater($total)
+                . ' Ar frais compris, votre solde est de ' . $this->formater((float) $compte['solde']) . ' Ar.');
+        }
+
+        // Code secret verifie en dernier, comme sur la page Transfert.
+        if (! hash_equals((string) $compte['code_secret'], $code)) {
+            return $this->echecEnvoiMultiple('Code secret incorrect.');
+        }
+
+        $db = db_connect();
+        $db->transStart();
+
+        $this->comptes->ajusterSolde($compteId, -$total);
+
+        // Une ligne par destinataire, chacune portant sa part et ses propres
+        // frais : l'historique est identique a N transferts simples.
+        foreach ($liste as $numero) {
+            $beneficiaire = $beneficiaires[$numero];
+
+            $this->comptes->ajusterSolde((int) $beneficiaire['id'], $part);
+
+            $this->historiques->insert([
+                'type_operation_id'     => $typeId,
+                'compte_source'         => $compteId,
+                'compte_destination'    => (int) $beneficiaire['id'],
+                'telephone_destination' => null,
+                'montant'               => $part,
+                'frais'                 => $fraisPart,
+                'commission'            => 0,
+                'date_operation'        => date('Y-m-d H:i:s'),
+            ]);
+        }
+
+        $db->transComplete();
+
+        if ($db->transStatus() === false) {
+            return $this->echecEnvoiMultiple("L'envoi n'a pas pu être enregistré, veuillez réessayer.");
+        }
+
+        return redirect()->to('client/solde')
+            ->with('succes', 'Envoi de ' . $this->formater($montant) . ' Ar réparti entre '
+                . $nombre . ' destinataires (' . $this->formater($part) . ' Ar chacun, frais : '
+                . $this->formater($fraisPart) . ' Ar par destinataire, soit '
+                . $this->formater($fraisTotal) . ' Ar).');
+    }
+
+    /**
+     * Retour d'erreur de l'envoi multiple : redirection explicite plutot que
+     * back(), qui dependrait de l'en-tete Referer, en conservant la saisie.
+     */
+    private function echecEnvoiMultiple(string $message): RedirectResponse
+    {
+        return redirect()->to('client/envoi-multiple')->withInput()->with('erreur', $message);
+    }
+
+    /**
+     * Normalise la liste de numeros postee : trim, retrait des champs vides,
+     * reindexation. getPost() peut renvoyer null ou une chaine, d'ou le cast.
+     */
+    private function nettoyerDestinataires($brut): array
+    {
+        $liste = [];
+
+        foreach ((array) $brut as $numero) {
+            $numero = trim((string) $numero);
+
+            if ($numero !== '') {
+                $liste[] = $numero;
+            }
+        }
+
+        return $liste;
     }
 
     public function historique()
@@ -446,16 +609,29 @@ class ClientController extends BaseController
             return $this->response->setJSON(['frais' => 0]);
         }
 
-        // Transfert externe => pas de frais
-        if ($this->estTransfertExterne($destinataire)) {
+        $typeId = $this->types->idParNom('Transfert');
+        $frais  = $this->baremes->fraisPour($typeId, $montant);
+
+        if ($frais === null) {
             return $this->response->setJSON(['frais' => 0]);
         }
 
-        // Transfert interne => calcule frais depuis le barème
-        $typeId = $this->types->idParNom('Transfert');
-        $frais = $this->baremes->fraisPour($typeId, $montant);
+        // Vers un autre operateur, le client paie aussi la commission : on
+        // annonce le total preleve, comme le fera l'historique.
+        $commission = 0.0;
 
-        return $this->response->setJSON(['frais' => $frais ?? 0]);
+        if ($this->comptes->parTelephone($destinataire) === null) {
+            $autreOp = $this->commissions->pourTelephone($destinataire);
+
+            if ($autreOp !== null) {
+                $commission = $this->commissions->commissionPour((float) $autreOp['pct_commission'], $montant);
+            }
+        }
+
+        return $this->response->setJSON([
+            'frais'      => $frais + $commission,
+            'commission' => $commission,
+        ]);
     }
 
     /**
@@ -489,40 +665,6 @@ class ClientController extends BaseController
         }
 
         $telephone = trim((string) $this->request->getGet('telephone'));
-
-
-        $session = session();
-
-        $numeroExpediteur = preg_replace('/\D/', '', $session->get('telephone'));
-        $numeroDestinataire = preg_replace('/\D/', '', $telephone);
-
-        $prefixeExpediteur = substr($numeroExpediteur, 0, 3);
-        $prefixeDestinataire = substr($numeroDestinataire, 0, 3);
-
-        $prefixModel = new PrefixeOperateurModel();
-
-        // Recherche de l'opérateur de l'expéditeur
-        $operateurExpediteur = $prefixModel
-            ->where('prefixe', $prefixeExpediteur)
-            ->first();
-
-        if ($operateurExpediteur !== null) {
-
-            // Vérifie si le préfixe du destinataire appartient au même opérateur
-            $prefixe = $prefixModel
-                ->where('operateur_id', $operateurExpediteur['operateur_id'])
-                ->where('prefixe', $prefixeDestinataire)
-                ->first();
-
-            // Si le préfixe n'appartient pas à notre opérateur,
-            // on considère qu'il s'agit d'un autre opérateur.
-            if ($prefixe === null) {
-                return $this->response->setJSON([
-                    'existe'  => true,
-                    'message' => 'Numéro appartenant à un autre opérateur.',
-                ]);
-            }
-        }
 
         if (! preg_match('/^[0-9]{10}$/', $telephone)) {
             return $this->response->setJSON([
@@ -632,74 +774,4 @@ class ClientController extends BaseController
     /**
      * Vérifie si le transfert est vers un numéro appartenant à un opérateur différent.
      */
-    public function estTransfertExterne(string $numeroDestinataire): bool
-    {
-        $session = session();
-        $numeroExpediteur = preg_replace('/\D/', '', $session->get('telephone'));
-        $numeroDestinataire = preg_replace('/\D/', '', $numeroDestinataire);
-
-        $prefixeExpediteur = substr($numeroExpediteur, 0, 3);
-        $prefixeDestinataire = substr($numeroDestinataire, 0, 3);
-
-        // Si même préfixe => transfert interne
-        if ($prefixeExpediteur === $prefixeDestinataire) {
-            return false;
-        }
-
-        $prefixModel = new PrefixeOperateurModel();
-
-        // Récupère l'opérateur du préfixe expéditeur
-        $operateurExpediteur = $prefixModel->where('prefixe', $prefixeExpediteur)->first();
-        if ($operateurExpediteur === null) {
-            return false;
-        }
-
-        // Récupère l'opérateur du préfixe destinataire
-        $operateurDestinataire = $prefixModel->where('prefixe', $prefixeDestinataire)->first();
-        if ($operateurDestinataire === null) {
-            return true; // Préfixe inconnu => transfert externe
-        }
-
-        // Opérateurs différents => transfert externe
-        return $operateurDestinataire['operateur_id'] !== $operateurExpediteur['operateur_id'];
-    }
-    /**
-     * Effectue un transfert externe (vers un autre opérateur).
-     * Retourne true si succès, false sinon.
-     */
-    public function faireTransfertExterne(string $destinataire, float $montant, float $frais, int $compteId, int $typeId): bool
-    {
-        $commissionModel = new CommissionOperateurModel();
-        $prefixeDestinataire = substr(preg_replace('/\D/', '', $destinataire), 0, 3);
-
-        $commission = $commissionModel->where('prefixe_autre_operateur', $prefixeDestinataire)->first();
-        if ($commission === null) {
-            return false;
-        }
-
-        $valeur_commission = $montant * ($commission['pct_commission'] / 100);
-        $total = $montant + $frais;
-
-        $db = db_connect();
-        $db->transStart();
-
-        // Déduit le montant + frais du compte source
-        $this->comptes->ajusterSolde($compteId, -$total);
-
-        // Enregistre la transaction
-        $this->historiques->insert([
-            'type_operation_id'  => $typeId,
-            'compte_source'      => $compteId,
-            'compte_destination' => null,
-            'montant'            => $montant,
-            'frais'              => $frais,
-            'commission'         => $valeur_commission,
-            'date_operation'     => date('Y-m-d H:i:s'),
-        ]);
-
-        $db->transComplete();
-
-        return $db->transStatus() !== false;
-    }
-
 }

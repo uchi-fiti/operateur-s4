@@ -49,12 +49,29 @@
       <?= $this->renderSection('actions') ?>
     </div>
 
-    <?php if (session('error')): ?>
-      <div class="alert alert-danger" role="alert"><?= esc(session('error')) ?></div>
+    <?php
+      // Les deux conventions de nommage coexistent dans le projet : on accepte
+      // les cles francaises et anglaises pour qu'aucun message ne soit perdu.
+      $messageErreur = session('error') ?? session('erreur');
+      $messageSucces = session('success') ?? session('succes');
+    ?>
+
+    <?php if ($messageErreur): ?>
+      <div class="alert alert-danger" role="alert"><?= esc($messageErreur) ?></div>
     <?php endif; ?>
 
-    <?php if (session('succes')): ?>
-      <div class="alert alert-success" role="alert"><?= esc(session('succes')) ?></div>
+    <?php if ($messageSucces): ?>
+      <div class="alert alert-success" role="alert"><?= esc($messageSucces) ?></div>
+    <?php endif; ?>
+
+    <?php if (session('errors')): ?>
+      <div class="alert alert-danger" role="alert">
+        <ul class="mb-0">
+          <?php foreach ((array) session('errors') as $erreurValidation): ?>
+            <li><?= esc($erreurValidation) ?></li>
+          <?php endforeach; ?>
+        </ul>
+      </div>
     <?php endif; ?>
 
     <?= $this->renderSection('contenu') ?>

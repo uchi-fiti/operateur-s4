@@ -48,6 +48,28 @@ class OperationOperateurModel extends Model
             'maximum' => (float) $ligne['maximum'],
         ];
     }
+    /**
+     * Cherche une tranche du meme type qui recouvre l'intervalle [min, max].
+     *
+     * Deux intervalles se chevauchent des que chacun commence avant la fin de
+     * l'autre. Un chevauchement rendrait fraisPour() ambigu : il prendrait
+     * silencieusement la tranche au montant_min le plus bas.
+     *
+     * $ignorerId permet a une modification de ne pas se comparer a elle-meme.
+     */
+    public function chevauchement(int $typeOperationId, float $min, float $max, ?int $ignorerId = null): ?array
+    {
+        $requete = $this->where('type_operation_id', $typeOperationId)
+            ->where('montant_min <=', $max)
+            ->where('montant_max >=', $min);
+
+        if ($ignorerId !== null) {
+            $requete->where('id !=', $ignorerId);
+        }
+
+        return $requete->orderBy('montant_min', 'ASC')->first();
+    }
+
     public function getGainsVenantDeFrais(){
         return $this->selectSum("frais", "fraisTotaux");
     }
